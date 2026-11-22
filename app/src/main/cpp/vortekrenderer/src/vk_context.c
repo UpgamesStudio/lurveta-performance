@@ -109,7 +109,7 @@ void VkContext_reportError(VkContext* context, const char* where, VkResult resul
 }
 
 #define VORTEK_DIAG_LOG VORTEK_ERROR_LOG_DIR "/vortek-diagnostics.log"
-#define JOURNAL_SIZE 400
+#define JOURNAL_SIZE 4000
 #define JOURNAL_NO_REPLY 0x7fffffff
 
 typedef struct JournalEntry {

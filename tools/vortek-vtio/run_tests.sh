@@ -10,7 +10,9 @@ nm -D --undefined-only "$out/libtestvtio.so" | grep -q __poll_chk || { echo "tes
 patchelf --rename-dynamic-symbols "$out/renames.txt" "$out/libtestvtio.so"
 patchelf --add-needed liblurveta_vtio.so "$out/libtestvtio.so"
 aarch64-linux-gnu-gcc -O2 -o "$out/test_vtio" "$here/test_vtio.c" -ldl -lpthread
-QEMU_LD_PREFIX=/usr/aarch64-linux-gnu LD_LIBRARY_PATH="$lib" qemu-aarch64 "$out/test_vtio" "$lib/libvulkan_vortek.so" "$out/libtestvtio.so"
+QEMU_LD_PREFIX=/usr/aarch64-linux-gnu LD_LIBRARY_PATH="$lib" qemu-aarch64 "$out/test_vtio" "$lib/libvulkan_vortek.so" "$out/libtestvtio.so" 2>&1 | tee "$out/main.txt" | grep -v "count [0-9]*, retried"
+grep -q "^VTIO TEST PASSED" "$out/main.txt" || exit 1
+grep -q "ANOMALY recvmsg (fd reply): reply arrived without any fd" "$out/main.txt" && echo "ok: fd reply without fds reported as ANOMALY" || { echo "FAIL: anomaly not reported"; exit 1; }
 echo "--- A/B: LURVETA_VTIO_RETRY=0 must reproduce the failure"
 if QEMU_LD_PREFIX=/usr/aarch64-linux-gnu LD_LIBRARY_PATH="$lib" LURVETA_VTIO_RETRY=0 qemu-aarch64 "$out/test_vtio" "$lib/libvulkan_vortek.so" "$out/libtestvtio.so" > "$out/ab.txt" 2>&1; then
   echo "FAIL: retries off but the test passed (signals not reaching the wait?)"; cat "$out/ab.txt"; exit 1

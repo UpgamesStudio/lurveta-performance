@@ -72,6 +72,8 @@ public class LaunchTraceTest {
         check(report.contains("VULKAN CALL JOURNAL of client 88") && report.contains("vkCreateSwapchainKHR x1 -> VK_ERROR_SURFACE_LOST_KHR"), "call journal in the report");
         check(report.contains("IMPORTANT LINES") && report.contains("wine: Unhandled page fault"), "crash line found inside the noise");
         check(report.contains("vortek client EINTR fix (vtio): loaded | waits interrupted by signals: yes"), "vtio shim load and EINTR events summarised");
+        check(report.indexOf("VULKAN SYNC/FRAME CALLS of client 88") >= 0 && report.indexOf("vkCreateSwapchainKHR x1", report.indexOf("VULKAN SYNC/FRAME CALLS of client 88")) < report.indexOf("VULKAN CALL JOURNAL of client 88"), "sync/frame calls of the whole journal listed");
+        check(report.contains("client I/O anomalies: none"), "no vtio anomaly reported when there is none");
         check(report.contains("KNOWN CAUSE: this DXVK version requires VK_EXT_robustness2"), "DXVK 2.x robustness2 requirement explained");
         check(report.contains("noise filtered: 3500 lines"), "noise counted, not shown");
         check(report.contains("still running when the session ended: none") || report.contains("still running when the session ended: GTAIV.exe"), "alive-at-end line present");

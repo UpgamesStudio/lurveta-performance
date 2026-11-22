@@ -56,6 +56,14 @@ int main(int argc, char** argv) {
     CHECK(r == 1, "infinite poll under signals returns when the fd is signaled (r=%d, %lld ms)", r, dt);
 
     stop = 1; pthread_join(th, NULL);
+
+    /* Anomaly detection: an fd reply without fds (what makes the client report a lost device). */
+    int sp[2]; socketpair(AF_UNIX, SOCK_STREAM, 0, sp);
+    if (write(sp[1], "abcd", 4) != 4) return 3;
+    typedef long (*recvctl)(int fd, char* buf, int len);
+    recvctl recvWithControl = (recvctl)dlsym(lib, "test_recv_fds");
+    n = recvWithControl(sp[0], buf, 4);
+    CHECK(n == 4, "fd reply without fds still returns its data (n=%ld; an ANOMALY line must be printed above)", n);
     printf(failures ? "VTIO TEST FAILED (%d)\n" : "VTIO TEST PASSED\n", failures);
     return failures != 0;
 }

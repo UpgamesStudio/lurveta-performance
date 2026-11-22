@@ -575,7 +575,14 @@ public final class LaunchTrace {
                 String pidText = journal.getName().substring(15, journal.getName().length() - 4);
                 int pid = -1;
                 try { pid = Integer.parseInt(pidText); } catch (NumberFormatException ignored) {}
-                List<String> lines = tail(journal, JOURNAL_LINES);
+                List<String> all = readLines(journal, 1024 * 1024);
+                // Synchronisation and frame calls of the whole session: where a device is lost they show what came just before.
+                List<String> sync = new ArrayList<>();
+                for (String line : all) for (String k : SYNC_CALLS) if (line.contains(" " + k + " ")) { sync.add(line); break; }
+                if (sync.size() > SYNC_LINES) sync = sync.subList(sync.size() - SYNC_LINES, sync.size());
+                List<String> lines = all.size() > JOURNAL_LINES ? all.subList(all.size() - JOURNAL_LINES, all.size()) : all;
+                sb.append("\n--- VULKAN SYNC/FRAME CALLS of client ").append(clientName(pid)).append(" (").append(sync.size()).append(" entries, whole journal of ").append(all.size()).append(") ---\n");
+                for (String line : sync) sb.append(line).append('\n');
                 sb.append("\n--- VULKAN CALL JOURNAL of client ").append(clientName(pid)).append(" (last ").append(lines.size()).append(" entries; consecutive identical calls merged) ---\n");
                 for (String line : lines) sb.append(line).append('\n');
             }
@@ -586,7 +593,8 @@ public final class LaunchTrace {
         for (String line : scan.important) sb.append(line).append('\n');
         if (scan.importantDropped > 0) sb.append("(").append(scan.importantDropped).append(" more important lines not shown)\n");
         sb.append("vortek client EINTR fix (vtio): ").append(scan.vtioActive ? "loaded" : "NOT seen in the output")
-          .append(scan.vtioEintr > 0 ? " | waits interrupted by signals: yes (see 'LURVETA vtio' lines)" : " | waits interrupted by signals: none logged").append('\n');
+          .append(scan.vtioEintr > 0 ? " | waits interrupted by signals: yes (see 'LURVETA vtio' lines)" : " | waits interrupted by signals: none logged")
+          .append(scan.vtioAnomalies > 0 ? " | client I/O anomalies: YES (see 'LURVETA vtio: ANOMALY' lines)" : " | client I/O anomalies: none").append('\n');
         if (scan.dxvkNeedsRobustness2) {
             sb.append("KNOWN CAUSE: this DXVK version requires VK_EXT_robustness2, which this GPU driver does not offer;\n")
               .append("  DXVK 2.x cannot create a D3D11 device here. Use DXVK 1.10.x in the container settings.\n");
@@ -600,6 +608,9 @@ public final class LaunchTrace {
 
 
     private static final int JOURNAL_LINES = 160;
+    private static final int SYNC_LINES = 150;
+    private static final String[] SYNC_CALLS = {"vkCreateDevice", "vkDestroyDevice", "vkQueueSubmit", "vkQueueSubmit2", "vkWaitForFences", "vkGetFenceStatus",
+        "vkResetFences", "vkDeviceWaitIdle", "vkQueueWaitIdle", "vkWaitSemaphores", "vkCreateSwapchainKHR", "vkAcquireNextImageKHR", "vkQueuePresentKHR"};
     private static final String[] NOISE = {"not found in lib", "PolygonOffset scale factor detection failed"};
     private static final String[] IMPORTANT = {"err:", "Unhandled", "xception", "wine: ", "rror", "fatal", "Fatal", "crash", "Crash",
         "SIGSEGV", "SIGILL", "SIGBUS", "Assertion", "abort", "Abort", "page fault", "backtrace", "Backtrace", "killed", "Killed", "failed", "Failed",
@@ -613,6 +624,7 @@ public final class LaunchTrace {
         boolean dxvkNeedsRobustness2 = false;
         boolean vtioActive = false;
         int vtioEintr = 0;
+        int vtioAnomalies = 0;
     }
 
     /** Reads the whole Box64/Wine output once: keeps every important line (up to 250) and the tail without noise. */
@@ -636,7 +648,8 @@ public final class LaunchTrace {
                 addTail(scan, line);
                 if (line.contains("Required Vulkan extension VK_EXT_robustness2 not supported")) scan.dxvkNeedsRobustness2 = true;
                 if (line.startsWith("LURVETA vtio: active")) scan.vtioActive = true;
-                if (line.startsWith("LURVETA vtio:") && line.contains("EINTR")) scan.vtioEintr++;
+                if (line.startsWith("LURVETA vtio:") && line.contains("interrupted by a signal")) scan.vtioEintr++;
+                if (line.startsWith("LURVETA vtio:") && line.contains("ANOMALY")) scan.vtioAnomalies++;
                 for (String k : IMPORTANT) {
                     if (line.contains(k)) {
                         if (scan.important.size() < 250) scan.important.add(line);
@@ -752,6 +765,21 @@ public final class LaunchTrace {
                 long epoch = -1;
                 try { epoch = Long.parseLong(space > 0 ? line.substring(0, space) : line); } catch (NumberFormatException ignored) {}
                 if (epoch >= startEpochSeconds - 1 && (contains.isEmpty() || line.contains(contains))) result.add(line.trim());
+            }
+        }
+        catch (IOException ignored) {}
+        return result;
+    }
+
+    /** Every line of a file (at most maxBytes are read, from the start). */
+    private static List<String> readLines(File file, int maxBytes) {
+        List<String> result = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            long read = 0;
+            while ((line = reader.readLine()) != null && read < maxBytes) {
+                read += line.length() + 1;
+                result.add(line);
             }
         }
         catch (IOException ignored) {}

@@ -10,3 +10,9 @@ long test_recv(int fd, char* buf, int len) {
     return recvmsg(fd, &m, 0);
 }
 long test_read(int fd, char* buf, int len) { return read(fd, buf, len); }
+long test_recv_fds(int fd, char* buf, int len) {
+    char control[CMSG_SPACE(4 * sizeof(int))];
+    struct iovec iov = {buf, (size_t)len}; struct msghdr m; memset(&m, 0, sizeof m); m.msg_iov = &iov; m.msg_iovlen = 1;
+    m.msg_control = control; m.msg_controllen = sizeof control;
+    return recvmsg(fd, &m, 0);
+}
