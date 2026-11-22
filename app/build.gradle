@@ -20,6 +20,7 @@ android {
 
         buildConfigField 'String', 'PRODUCT_NAME', '"LURVETA Performance"'
         buildConfigField 'String', 'UPSTREAM_BASE', '"Winlator 11.2 (winlator-app@a030f55)"'
+        buildConfigField 'String', 'SOURCE_URL', '"https://github.com/UpgamesStudio/lurveta-performance"'
 
         externalNativeBuild {
             cmake {

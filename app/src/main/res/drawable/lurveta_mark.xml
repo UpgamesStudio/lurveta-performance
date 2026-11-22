@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LURVETA mark: forward-leaning geometric "L" with a launch triangle. Original artwork. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M44.5,28 L56.5,28 L47,66 L79,66 L76,78 L32,78 Z" />
+    <path
+        android:fillColor="#00C8F5"
+        android:pathData="M60,33 L80,45.5 L56.5,58 Z" />
+</vector>
