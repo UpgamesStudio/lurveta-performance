@@ -30,7 +30,19 @@ static inline uint64_t monotonicNanos() {
 /* ---------------------------------------------------------------------------------------------
  * Formats
  * ------------------------------------------------------------------------------------------- */
+static volatile bool highBCEnabled = true;
+void TextureDecoder_setHighBCEnabled(bool enabled) { highBCEnabled = enabled; }
+
 bool TextureDecoder_canDecodeFormat(VkFormat format) {
+    switch (format) {
+        case VK_FORMAT_BC6H_UFLOAT_BLOCK:
+        case VK_FORMAT_BC6H_SFLOAT_BLOCK:
+        case VK_FORMAT_BC7_UNORM_BLOCK:
+        case VK_FORMAT_BC7_SRGB_BLOCK:
+            return highBCEnabled;
+        default:
+            break;
+    }
     switch (format) {
         case VK_FORMAT_BC1_RGB_UNORM_BLOCK:
         case VK_FORMAT_BC1_RGB_SRGB_BLOCK:

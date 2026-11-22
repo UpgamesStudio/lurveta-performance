@@ -43,6 +43,8 @@ typedef struct VkContext {
     ThreadPool* threadPool;
     ThreadPool* decodeThreadPool; // LURVETA: BC decoding only (never shares workers with pipeline compiles)
     int textureUploadMode;        // LURVETA: TEXTURE_UPLOAD_MODE_* (texture_decoder.h)
+    volatile bool shuttingDown;   // LURVETA: set by destroyVkContext; a normal shutdown is not an error
+    int diagLines;
     bool errorReported;           // LURVETA: fatal error already logged and signalled to the client
     bool persistentPipelineCache; // LURVETA: option "pipelineCache"
     PersistentPipelineCache* pipelineCache;
@@ -72,5 +74,13 @@ extern bool handleExtraDataRequest(VkContext* context, uint16_t requestId, int r
  * rings with RING_STATUS_EXIT so the client gets VK_ERROR_DEVICE_LOST instead of waiting forever.
  */
 extern void VkContext_reportError(VkContext* context, const char* where, VkResult result);
+
+/*
+ * LURVETA diagnostics: records a Vulkan call that FAILED (logcat + files/logs/vortek-diagnostics.log).
+ * Costs nothing when calls succeed; at most VORTEK_DIAG_MAX_LINES lines per session.
+ * VkContext_logInfo writes one informational line (device summary at startup), same limits.
+ */
+extern void VkContext_logFailure(VkContext* context, const char* call, VkResult result, const char* fmt, ...);
+extern void VkContext_logInfo(VkContext* context, const char* fmt, ...);
 
 #endif
