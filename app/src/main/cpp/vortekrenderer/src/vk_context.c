@@ -128,6 +128,38 @@ void VkContext_logInfo(VkContext* context, const char* fmt, ...) {
     va_end(args);
 }
 
+#define VORTEK_ACTIVITY_FILE VORTEK_ERROR_LOG_DIR "/vortek-activity.txt"
+
+static void* activityThread(void* param) {
+    VkContext* context = param;
+    char tmpPath[] = VORTEK_ACTIVITY_FILE ".tmp";
+    while (!context->shuttingDown) {
+        for (int i = 0; i < 20 && !context->shuttingDown; i++) usleep(100000);
+        if (context->shuttingDown) break;
+
+        int64_t now = monotonicNanos();
+        int current = context->currentRequest;
+        int last = context->lastRequest;
+        struct timespec ts;
+        clock_gettime(CLOCK_REALTIME, &ts);
+        FILE* file = fopen(tmpPath, "w");
+        if (!file) continue;
+        fprintf(file, "%lld requests=%llu submits=%llu presents=%u swapchains=%u images=%u allocMB=%llu ",
+                (long long)ts.tv_sec, (unsigned long long)context->requestCount, (unsigned long long)context->submitCount,
+                context->presentCount, context->swapchainCount, context->imageCount, (unsigned long long)(context->totalAllocationSize >> 20));
+        if (current >= 0) {
+            fprintf(file, "state=IN_CALL call=%s forMs=%lld\n", requestCodeToString((short)current), (long long)((now - context->requestStartNanos) / 1000000));
+        }
+        else {
+            fprintf(file, "state=WAITING_FOR_GAME last=%s idleMs=%lld\n", last >= 0 ? requestCodeToString((short)last) : "-",
+                    context->requestEndNanos ? (long long)((now - context->requestEndNanos) / 1000000) : -1LL);
+        }
+        fclose(file);
+        rename(tmpPath, VORTEK_ACTIVITY_FILE);
+    }
+    return NULL;
+}
+
 static void* requestHandlerThread(void* param) {
     VkContext* context = param;
     loadJMethods(&context->jmethods);
@@ -157,7 +189,13 @@ static void* requestHandlerThread(void* param) {
 #endif
 
         HandleRequestFunc handleRequestFunc = getHandleRequestFunc(requestCode);
+        context->requestStartNanos = monotonicNanos();
+        context->currentRequest = requestCode;
+        context->requestCount++;
         if (handleRequestFunc) handleRequestFunc(context);
+        context->lastRequest = requestCode;
+        context->currentRequest = -1;
+        context->requestEndNanos = monotonicNanos();
 
         if (requestCode == REQUEST_CODE_VK_QUEUE_PRESENT_KHR && perfHint.session) {
             int64_t now = monotonicNanos();
@@ -246,6 +284,11 @@ VkContext* createVkContext(JNIEnv* env, jobject obj, int clientFd, jobject optio
         return NULL;
     }
 
+    context->currentRequest = -1;
+    context->lastRequest = -1;
+    mkdir(VORTEK_ERROR_LOG_DIR, 0771);
+    pthread_create(&context->activityThread, NULL, activityThread, context);
+
     VkContext_logInfo(context, "STAGE client-connected (upload mode %d, pipeline cache %d)", context->textureUploadMode, (int)context->persistentPipelineCache);
 
     return context;
@@ -254,6 +297,11 @@ VkContext* createVkContext(JNIEnv* env, jobject obj, int clientFd, jobject optio
 void destroyVkContext(JNIEnv* env, VkContext* context) {
     context->shuttingDown = true;
     context->status = VK_ERROR_DEVICE_LOST;
+
+    if (context->activityThread) {
+        pthread_join(context->activityThread, NULL);
+        context->activityThread = 0;
+    }
 
     if (context->requestHandlerThread) {
         RingBuffer_setStatus(context->serverRing, RING_STATUS_EXIT);

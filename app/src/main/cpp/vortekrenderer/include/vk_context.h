@@ -46,6 +46,18 @@ typedef struct VkContext {
     volatile bool shuttingDown;   // LURVETA: set by destroyVkContext; a normal shutdown is not an error
     int diagLines;
     uint32_t presentCount;        // LURVETA: the first present is logged as a launch stage
+    /* LURVETA activity probe (written every 2 s to files/logs/vortek-activity.txt by a watchdog
+     * thread): tells whether the game is calling Vulkan at all and whether the server is stuck
+     * inside one call. Counters are only written by the request thread. */
+    volatile uint64_t requestCount;
+    volatile uint64_t submitCount;
+    volatile uint32_t swapchainCount;
+    volatile uint32_t imageCount;
+    volatile int currentRequest;      // -1 when waiting for the next request
+    volatile int lastRequest;
+    volatile int64_t requestStartNanos;
+    volatile int64_t requestEndNanos;
+    pthread_t activityThread;
     bool errorReported;           // LURVETA: fatal error already logged and signalled to the client
     bool persistentPipelineCache; // LURVETA: option "pipelineCache"
     PersistentPipelineCache* pipelineCache;

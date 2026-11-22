@@ -8,6 +8,12 @@ Cada vez que lanzas un juego, la app escribe **`Download/LURVETA/logs/launch-lat
 
 Si un juego termina de forma inesperada, al volver al menú verás un aviso con el veredicto. **Este archivo es lo único que necesito para empezar** (pásalo tal cual).
 
+### Para GTA IV con pantalla negra (sondas nuevas)
+Deja el juego **al menos 2 minutos** en la pantalla negra antes de cerrarlo, para que las sondas tomen varias muestras. El informe incluye:
+- `probe GTAIV.exe …` y `probe gta4Browser.exe …` cada 5 s: CPU total y de los hilos más activos (Wine les pone nombre), memoria y estados. «IDLE/WAITING» = el proceso está parado esperando algo (bloqueo); «one thread busy»/«working» = sigue ejecutando código.
+- `vortek: requests=… submits=… presents=… swapchains=… images=… allocMB=… state=…`: si el juego llama a Vulkan, cuánto, y si el servidor está **bloqueado dentro de una llamada** (`SERVER BLOCKED INSIDE THIS VULKAN CALL`) o esperando al juego.
+- Etapas Vulkan: si llegó a crear instancia, dispositivo y swapchain, y si presentó algún fotograma.
+
 Pruebas de capa, en este orden, con el mismo contenedor (cada una genera su informe):
 1. **Escritorio de Wine** (ejecutar el contenedor sin juego) y luego `notepad`/`winecfg`: si llegan a «Escritorio de Wine», Box64+Wine+rootfs funcionan.
 2. **Un juego DX9/DX11 sencillo** que sepas que funciona en Winlator 11.2: si llega a «primer fotograma», DXVK+Vortek funcionan en general.

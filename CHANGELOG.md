@@ -20,6 +20,12 @@ Objetivo: aislar y corregir la regresión de arranque de GTA IV/GTA V. **No se d
 - **[V‑host]** la lógica del veredicto (cada punto de parada → diagnóstico correcto). **No probado en dispositivo** la captura en sí.
 - `docs/DIFERENCIAS_CON_WINLATOR_11_2.md`: comparación del camino de arranque con 11.2 (verificado: rutas reubicadas sin restos).
 
+### Sondas para pantallas negras (nuevo)
+- Vortek escribe cada 2 s `files/logs/vortek-activity.txt` (desde un hilo vigía): peticiones, envíos, presentaciones, swapchains, imágenes, memoria y **la llamada Vulkan en curso y desde hace cuánto**; el informe marca `SERVER BLOCKED INSIDE THIS VULKAN CALL` si dura más de 5 s.
+- El informe muestrea cada 5 s los hilos del proceso del juego y de sus procesos auxiliares (p. ej. `gta4Browser.exe`): CPU por hilo, estados y memoria, para distinguir bloqueo de ejecución.
+- Se registran los fallos de `vkCreateSwapchainKHR` (Vortek rechaza un swapchain cuyo tamaño no coincide exactamente con la ventana).
+- **[V‑host]** captura completa ejecutada en Linux contra un GTA IV simulado (proceso ocupado, auxiliar dormido, llamada Vulkan bloqueada). **No probada en dispositivo.**
+
 ### Diagnóstico (nuevo)
 - `files/logs/vortek-diagnostics.log`: resumen del dispositivo al arrancar y una línea por cada llamada Vulkan que falla (memoria con tamaños y tope, imágenes, buffers, vistas, pipelines…). Límite de 200 líneas por sesión; sin coste si todo va bien. El benchmark cuenta estos fallos (`vulkan_call_failures`, `events.csv`).
 - Interruptor Vortek › **Emular BC6H/BC7** (por defecto activado): desactivado reproduce el comportamiento de 1.0.0. Junto con el modo de subida BC y la caché de pipelines, permite aislar la regresión sin cambiar de APK (`docs/PRUEBAS_GTA.md`).

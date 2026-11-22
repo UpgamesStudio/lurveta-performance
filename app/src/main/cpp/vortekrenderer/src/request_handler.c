@@ -280,6 +280,7 @@ void vt_handle_vkQueueSubmit(VkContext* context) {
     }
 
     if (result == VK_SUCCESS) result = vulkanWrapper.vkQueueSubmit(queue, submitCount, submits, fence);
+    context->submitCount++;
     if (result == VK_ERROR_DEVICE_LOST) VkContext_reportError(context, "vkQueueSubmit", result);
 
     if (clientWaiting) vt_send(context->clientRing, result, NULL, 0);
@@ -814,11 +815,12 @@ void vt_handle_vkCreateImage(VkContext* context) {
     if (context->textureDecoder && context->textureDecoder->device == device && TextureDecoder_isFormatSupported(context->textureDecoder, createInfo.format)) {
         VkFormat originalFormat = createInfo.format;
         result = TextureDecoder_createImage(context->textureDecoder, &createInfo, &image);
-        if (result == VK_SUCCESS) RingBuffer_setStatus(context->clientRing, RING_STATUS_WAIT);
+        if (result == VK_SUCCESS) { RingBuffer_setStatus(context->clientRing, RING_STATUS_WAIT); context->imageCount++; }
         else VkContext_logFailure(context, "vkCreateImage(decoded BC)", result, "format %d %ux%u mips %u layers %u", originalFormat, createInfo.extent.width, createInfo.extent.height, createInfo.mipLevels, createInfo.arrayLayers);
     }
     else {
         result = vulkanWrapper.vkCreateImage(device, &createInfo, NULL, &image);
+        if (result == VK_SUCCESS) context->imageCount++;
         if (result != VK_SUCCESS) VkContext_logFailure(context, "vkCreateImage", result, "format %d %ux%u mips %u layers %u usage 0x%x flags 0x%x", createInfo.format, createInfo.extent.width, createInfo.extent.height, createInfo.mipLevels, createInfo.arrayLayers, createInfo.usage, createInfo.flags);
     }
 
@@ -2076,6 +2078,8 @@ void vt_handle_vkCreateSwapchainKHR(VkContext* context) {
         if (!swapchain) result = VK_ERROR_INITIALIZATION_FAILED;
     }
     else result = VK_ERROR_SURFACE_LOST_KHR;
+    if (result == VK_SUCCESS) context->swapchainCount++;
+    else VkContext_logFailure(context, "vkCreateSwapchainKHR", result, "");
 
     VT_SERIALIZE_CMD(VkSwapchainKHR, (VkSwapchainKHR)swapchain);
     vt_send(context->clientRing, result, outputBuffer, bufferSize);
@@ -3487,6 +3491,7 @@ void vt_handle_vkQueueSubmit2(VkContext* context) {
     }
 
     if (result == VK_SUCCESS) result = vulkanWrapper.vkQueueSubmit2(queue, submitCount, submits, fence);
+    context->submitCount++;
     if (result == VK_ERROR_DEVICE_LOST) VkContext_reportError(context, "vkQueueSubmit2", result);
 
     if (clientWaiting) vt_send(context->clientRing, result, NULL, 0);

@@ -34,3 +34,12 @@ echo "== Launch analysis (verdict for each point where a launch can stop)"
 mkdir -p "$T/la"
 "$JAVAC" -d "$T/la" "$ROOT/app/src/main/java/com/winlator/core/LaunchAnalysis.java" "$ROOT/tools/host-tests/LaunchAnalysisTest.java"
 "$JAVARUN" -cp "$T/la" LaunchAnalysisTest
+
+echo "== Launch trace end to end (simulated GTA IV black screen on the real /proc)"
+mkdir -p "$T/lt/classes" "$T/lt/files"
+"$JAVAC" -nowarn -d "$T/lt/classes" "$ROOT"/tools/host-tests/stub-java/android/content/*.java "$ROOT"/tools/host-tests/stub-java/android/os/*.java \
+    "$ROOT"/tools/host-tests/stub-java/android/util/*.java "$ROOT"/tools/host-tests/stub-java/android/system/*.java "$ROOT"/tools/host-tests/stub-java/androidx/annotation/*.java \
+    "$ROOT/tools/host-tests/stub-trace/com/winlator/BuildConfig.java" "$ROOT/tools/host-tests/stub-trace/com/winlator/core/HardwareInfo.java" \
+    "$ROOT/app/src/main/java/com/winlator/core/LaunchTrace.java" "$ROOT/app/src/main/java/com/winlator/core/LaunchAnalysis.java" \
+    "$ROOT/app/src/main/java/com/winlator/core/EnvVars.java" "$ROOT/tools/host-tests/LaunchTraceTest.java"
+"$JAVARUN" -Dtest.filesDir="$T/lt/files" -cp "$T/lt/classes" LaunchTraceTest | grep -E "FAIL|PASSED|probe"

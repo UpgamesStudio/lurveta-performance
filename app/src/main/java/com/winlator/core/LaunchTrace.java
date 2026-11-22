@@ -75,6 +75,17 @@ public final class LaunchTrace {
     private Thread sampler;
     private long lastFlushNanos = 0;
 
+    // Game process probe: CPU per thread of the game and its helper processes (is it working,
+    // waiting or spinning?), and the Vortek activity probe (is it calling Vulkan, stuck in a call?).
+    private final Map<Integer, Long> lastThreadTicks = new HashMap<>();
+    private final Map<Integer, Long> lastProcessTicks = new HashMap<>();
+    private long lastProbeNanos = 0;
+    private long lastActivityNoteNanos = 0;
+    private String lastActivity = null;
+    private String lastActivityKey = null;
+    private final List<String> probeSummary = new ArrayList<>();
+    private static final long CLOCK_TICKS = clockTicks();
+
     private LaunchTrace(Context context, String title, String gameExe) {
         this.context = context.getApplicationContext();
         this.title = title;
@@ -203,6 +214,8 @@ public final class LaunchTrace {
                 try {
                     sampleProcesses();
                     sampleVortekStages();
+                    sampleActivity();
+                    sampleGameThreads();
                     limitOutputSize();
                     long now = System.nanoTime();
                     double seconds = (now - startNanos) / 1e9;
@@ -282,6 +295,122 @@ public final class LaunchTrace {
         }
     }
 
+    private static long clockTicks() {
+        try {
+            long ticks = Os.sysconf(android.system.OsConstants._SC_CLK_TCK);
+            return ticks > 0 ? ticks : 100;
+        }
+        catch (Throwable t) {
+            return 100;
+        }
+    }
+
+    /** files/logs/vortek-activity.txt, rewritten every 2 s by Vortek's watchdog thread. */
+    private void sampleActivity() {
+        File file = new File(context.getFilesDir(), "logs/vortek-activity.txt");
+        if (!file.isFile() || file.lastModified() / 1000 < startEpochSeconds - 1) return;
+        String line;
+        try {
+            line = readSmall(file.getPath()).trim();
+        }
+        catch (IOException e) {
+            return;
+        }
+        int space = line.indexOf(' ');
+        if (space < 0) return;
+        String body = line.substring(space + 1);
+        lastActivity = body;
+
+        // Note it when the state changes (ignoring the moving idle/for counters) and every 15 s.
+        String key = body.replaceAll("(idleMs|forMs)=-?\\d+", "").replaceAll("requests=\\d+", "");
+        long now = System.nanoTime();
+        boolean stuck = body.contains("state=IN_CALL") && parseMs(body, "forMs=") >= 5000;
+        if (!key.equals(lastActivityKey) || now - lastActivityNoteNanos >= 15_000_000_000L || stuck && now - lastActivityNoteNanos >= 5_000_000_000L) {
+            note("vortek: " + body + (stuck ? "   <-- SERVER BLOCKED INSIDE THIS VULKAN CALL" : ""));
+            lastActivityKey = key;
+            lastActivityNoteNanos = now;
+        }
+    }
+
+    private static long parseMs(String text, String key) {
+        int i = text.indexOf(key);
+        if (i < 0) return -1;
+        int j = i + key.length();
+        int k = j;
+        while (k < text.length() && (Character.isDigit(text.charAt(k)) || text.charAt(k) == '-')) k++;
+        try { return Long.parseLong(text.substring(j, k)); } catch (NumberFormatException e) { return -1; }
+    }
+
+    /** Every 5 s: CPU of each thread of the game / browser processes (Wine names its threads). */
+    private void sampleGameThreads() {
+        long now = System.nanoTime();
+        if (now - lastProbeNanos < 5_000_000_000L) return;
+        double seconds = lastProbeNanos > 0 ? (now - lastProbeNanos) / 1e9 : 0;
+        lastProbeNanos = now;
+
+        List<Integer> targets = new ArrayList<>();
+        synchronized (this) {
+            for (Map.Entry<Integer, String> e : lastProcesses.entrySet()) {
+                String text = e.getValue().toLowerCase(Locale.ROOT);
+                String shortName = gameExe.length() > 15 ? gameExe.substring(0, 15) : gameExe;
+                boolean isGame = !gameExe.isEmpty() && (text.startsWith(shortName) || text.contains(gameExe));
+                if (isGame || text.contains("browser")) targets.add(e.getKey());
+            }
+        }
+
+        for (int pid : targets) {
+            File[] tasks = new File("/proc/" + pid + "/task").listFiles();
+            if (tasks == null) continue;
+            long processDelta = 0;
+            int running = 0, sleeping = 0, disk = 0, other = 0;
+            List<long[]> busiest = new ArrayList<>();          // {delta, tid}
+            Map<Integer, String> names = new HashMap<>();
+            for (File task : tasks) {
+                try {
+                    int tid = Integer.parseInt(task.getName());
+                    String stat = readSmall(task.getPath() + "/stat");
+                    int open = stat.indexOf('('), close = stat.lastIndexOf(')');
+                    if (open < 0 || close < 0) continue;
+                    String[] f = stat.substring(close + 2).split(" ");
+                    char state = f[0].charAt(0);
+                    if (state == 'R') running++; else if (state == 'S') sleeping++; else if (state == 'D') disk++; else other++;
+                    long ticks = Long.parseLong(f[11]) + Long.parseLong(f[12]);
+                    Long previous = lastThreadTicks.put(tid, ticks);
+                    long delta = previous != null ? Math.max(0, ticks - previous) : 0;
+                    processDelta += delta;
+                    names.put(tid, stat.substring(open + 1, close) + "/" + state);
+                    busiest.add(new long[]{delta, tid});
+                }
+                catch (Throwable ignored) {}
+            }
+            busiest.sort((a, b) -> Long.compare(b[0], a[0]));
+            StringBuilder top = new StringBuilder();
+            for (int i = 0; i < Math.min(4, busiest.size()); i++) {
+                long[] t = busiest.get(i);
+                double pct = seconds > 0 ? 100.0 * t[0] / CLOCK_TICKS / seconds : 0;
+                top.append(String.format(Locale.ENGLISH, " [%s %.0f%%]", names.get((int)t[1]), pct));
+            }
+            long rssMb = 0;
+            try {
+                String[] statm = readSmall("/proc/" + pid + "/statm").trim().split(" ");
+                rssMb = Long.parseLong(statm[1]) * 4096 / (1024 * 1024);
+            }
+            catch (Throwable ignored) {}
+            double cpu = seconds > 0 ? 100.0 * processDelta / CLOCK_TICKS / seconds : 0;
+            String name = lastProcesses.containsKey(pid) ? lastProcesses.get(pid).split(" ")[0] : String.valueOf(pid);
+            boolean hasBaseline = lastProcessTicks.containsKey(pid);
+            lastProcessTicks.put(pid, processDelta);
+            String verdict = seconds <= 0 || !hasBaseline ? "first sample (no CPU baseline yet)" : cpu < 2 ? "IDLE/WAITING (almost no CPU: blocked or waiting for something)" : cpu > 80 * Math.max(1, running) && running <= 1 ? "one thread busy" : "working";
+            String line = String.format(Locale.ENGLISH, "probe %s pid %d: cpu %.0f%% | rss %d MB | threads %d (R%d S%d D%d other%d) | %s | busiest:%s",
+                                        name, pid, cpu, rssMb, tasks.length, running, sleeping, disk, other, verdict, top);
+            note(line);
+            synchronized (this) {
+                probeSummary.add(line);
+                if (probeSummary.size() > 6) probeSummary.remove(0);
+            }
+        }
+    }
+
     private static String afterMarker(String line) {
         int i = line.indexOf("STAGE ");
         String s = i >= 0 ? line.substring(i + 6) : line;
@@ -337,6 +466,13 @@ public final class LaunchTrace {
         for (int i = 0; i < reached.length; i++) sb.append(i).append(reached[i] ? "=yes " : "=NO ");
         sb.append('\n');
         sb.append("verdict (heuristic): ").append(LaunchAnalysis.verdict(execError, reached, exited, exitStatus, elapsedMs)).append('\n');
+        sb.append("vortek activity (last): ").append(lastActivity != null ? lastActivity : "no Vulkan client connected yet").append('\n');
+        synchronized (this) {
+            if (!probeSummary.isEmpty()) {
+                sb.append("game process probe (latest samples):\n");
+                for (String line : probeSummary) sb.append("  ").append(line).append('\n');
+            }
+        }
 
         sb.append("\n--- TIMELINE ---\n");
         synchronized (this) {
