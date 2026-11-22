@@ -21,6 +21,15 @@ echo "== Vortek host tests (inline uploads, BC1-BC7 reference, pipeline cache)"
 "$ROOT/tools/vortek-host-tests/run_tests.sh" "$T/vortek"
 "$ROOT/tools/vortek-vtio/run_tests.sh" "$T/vtio"
 
+echo "== Native crash handler (aarch64 under qemu)"
+mkdir -p /data/data/com.lurveta.co/files/logs
+aarch64-linux-gnu-gcc -O1 -g -Wall -rdynamic -funwind-tables -I "$C/vortekrenderer/include" -o "$T/crash_test" \
+    "$ROOT/tools/host-tests/crash_handler_test.c" "$C/vortekrenderer/src/crash_handler.c" -ldl
+QEMU_LD_PREFIX=/usr/aarch64-linux-gnu qemu-aarch64 "$T/crash_test" 2>/dev/null
+CRASH=/data/data/com.lurveta.co/files/logs/native-crash.txt
+grep -q "SIGSEGV" "$CRASH" && grep -q "fault address 0x10" "$CRASH" && grep -q "client pid 1234" "$CRASH" \
+    && grep -q "lurvetaTestCrashHere" "$CRASH" && echo "ALL CRASH HANDLER TESTS PASSED" || { echo "FAIL: crash report incomplete"; cat "$CRASH"; exit 1; }
+
 echo "== Benchmark samplers (ProcessSampler on the real /proc, GpuSampler fallback)"
 JAVAC="${JAVA_HOME:+$JAVA_HOME/bin/}javac"; JAVARUN="${JAVA_HOME:+$JAVA_HOME/bin/}java"
 mkdir -p "$T/samplers"

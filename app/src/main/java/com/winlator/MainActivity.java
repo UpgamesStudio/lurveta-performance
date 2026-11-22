@@ -95,7 +95,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     // LURVETA: a launch that ended unexpectedly used to return to the menu without a word.
     private void showPendingLaunchNotice() {
-        final String notice = com.winlator.core.LaunchTrace.takePendingNotice(this);
+        // A crash of the app process itself leaves no notice from the launch trace: collect it here.
+        final String crash = com.winlator.core.CrashCollector.collect(this);
+        final String pending = com.winlator.core.LaunchTrace.takePendingNotice(this);
+        final String notice = crash != null ? (pending != null ? crash + "\n\n" + pending : crash) : pending;
         if (notice == null) return;
         getWindow().getDecorView().post(() -> {
             if (isFinishing()) return;

@@ -1,6 +1,7 @@
 #include <time.h>
 #include <sys/stat.h>
 #include "vk_context.h"
+#include "crash_handler.h"
 #include "vulkan_helper.h"
 #include "request_handler.h"
 #include "sysvshared_memory.h"
@@ -247,6 +248,9 @@ static void* activityThread(void* param) {
 
 static void* requestHandlerThread(void* param) {
     VkContext* context = param;
+    CrashHandler_threadInit();
+    CrashHandler_setRequestNames(requestCodeToString);
+    pthread_setname_np(pthread_self(), "vortek-request");
     loadJMethods(&context->jmethods);
     ExtraDataRequest* extraDataRequest = NULL;
 
@@ -276,12 +280,14 @@ static void* requestHandlerThread(void* param) {
         HandleRequestFunc handleRequestFunc = getHandleRequestFunc(requestCode);
         context->requestStartNanos = monotonicNanos();
         context->currentRequest = requestCode;
+        CrashHandler_setActivity(requestCode, context->clientPid);
         context->requestCount++;
         vt_replyCount = 0;
         if (handleRequestFunc) handleRequestFunc(context);
         journalRecord(context, requestCode, vt_replyCount > 0 ? vt_replyResult : JOURNAL_NO_REPLY);
         context->lastRequest = requestCode;
         context->currentRequest = -1;
+        CrashHandler_setActivity(-1, 0);
         context->requestEndNanos = monotonicNanos();
 
         if (requestCode == REQUEST_CODE_VK_QUEUE_PRESENT_KHR && perfHint.session) {

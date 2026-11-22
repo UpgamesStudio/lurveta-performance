@@ -25,6 +25,7 @@ add_library(vortekrenderer SHARED
             src/async_pipeline_creator.c
             src/pipeline_cache.c
             src/fence_export.c
+            src/crash_handler.c
             src/timeline_semaphore.c)
 
 target_link_libraries(vortekrenderer
