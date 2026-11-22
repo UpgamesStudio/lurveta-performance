@@ -1,8 +1,8 @@
 # Instalación y compilación
 
 ## Instalar el APK
-1. Copia `LURVETA-Performance-1.0.0.apk` al teléfono e instálalo. Puede que tengas que permitir "instalar apps desconocidas" para tu gestor de archivos.
-   Por adb: `adb install -r LURVETA-Performance-1.0.0.apk`.
+1. Copia `LURVETA-Performance-1.1.0.apk` al teléfono e instálalo. Puede que tengas que permitir "instalar apps desconocidas" para tu gestor de archivos.
+   Por adb: `adb install -r LURVETA-Performance-1.1.0.apk`.
 2. Ábrelo y espera a que termine la primera instalación. Extrae el rootfs (unos 400 MB) en `files/rtfs`, y durante la extracción se reubican las rutas internas.
 3. **Convivencia:** el paquete es `com.lurveta.co`, así que puede estar instalado a la vez que Winlator (`com.winlator`). No comparten datos ni contenedores.
 4. Permisos: almacenamiento para las unidades D:/E: y para guardar benchmarks y logs en `Download/LURVETA`, y notificaciones para el servicio en segundo plano.

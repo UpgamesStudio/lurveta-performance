@@ -14,6 +14,10 @@ Está optimizado para **MediaTek Dimensity** con **GPU ARM Mali** y toma como ha
 > LURVETA Performance es un producto de LURVETA **basado en Winlator**, de BrunoSX
 > (<https://github.com/brunodev85/winlator>). Se conservan todos los avisos de copyright y las licencias del proyecto original y de sus componentes.
 
+## Descargar
+
+La última versión está en [Releases](https://github.com/UpgamesStudio/lurveta-performance/releases/latest) (APK + `SHA256SUMS`). Cada actualización se publica como un release nuevo con su etiqueta `vX.Y.Z`.
+
 ## Qué aporta frente a Winlator 11.2
 
 | Área | Cambio | Estado |

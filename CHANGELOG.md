@@ -5,7 +5,9 @@ Base: Winlator 11.2 (`winlator-app@a030f55`, tag `upstream-winlator-11.2`). Cada
 - **[V‑apk]**: comprobado en el APK compilado (aapt/strings).
 - **[Disp.]**: requiere medición en el dispositivo.
 
-## 1.1.0 (en desarrollo, rama técnica)
+## 1.1.0 — rediseño visual + Vortek (release)
+
+Incluye el rediseño visual (solo presentación, ver `docs/REDISENO_UI.md`) y las mejoras técnicas siguientes.
 
 ### Subidas de texturas BC (corrige P1b)
 - **Modo "en línea" (nuevo, por defecto):** la copia decodificada se graba **dentro del command buffer del juego**, en la posición exacta de su `vkCmdCopyBufferToImage`, leyendo de un staging propio de ese command buffer. Se decodifica al enviarlo y el staging se recicla cuando el juego lo reinicia o libera. Las barreras, transiciones de layout y el orden del juego se aplican tal cual: no hay copias adelantadas, no hay escrituras concurrentes sobre la misma imagen y la CPU nunca espera a la GPU. **[V‑host]** en lavapipe con validación y validación de sincronización: 0 errores, 0 envíos extra, 0 esperas; reenviar un command buffer con datos nuevos, command buffers secundarios, mips y tamaños impares, 200 fotogramas con reinicio de pool (staging máximo 4 MB). Rendimiento: **[Disp.]**

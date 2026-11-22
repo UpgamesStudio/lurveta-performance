@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LURVETA Performance — Descargas</title>
+<style>
+:root{--bg:#07090d;--card:#0f141b;--line:#1f2833;--text:#edf2f7;--muted:#8d9aaa;--cyan:#00c8f5}
+@media (prefers-color-scheme:light){:root{--bg:#f1f3f6;--card:#fff;--line:#dce2e9;--text:#0d131a;--muted:#556172;--cyan:#0091b8}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,sans-serif}
+main{max-width:640px;margin:0 auto;padding:32px 16px}
+h1{font-size:28px;margin:0 0 4px}p.sub{color:var(--muted);margin:0 0 24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
+a.btn{display:inline-block;background:var(--cyan);color:#02141b;font-weight:700;padding:12px 20px;border-radius:10px;text-decoration:none}
+a{color:var(--cyan)}code{background:var(--bg);padding:2px 6px;border-radius:6px;font-size:14px}
+ul{padding-left:20px;margin:8px 0 0}#ver{color:var(--muted);font-size:14px;margin-top:10px}
+</style>
+</head>
+<body>
+<main>
+<h1>LURVETA Performance</h1>
+<p class="sub">Winlator optimizado para Mali (Dimensity 8350 / Mali‑G615). Paquete <code>com.lurveta.co</code>.</p>
+
+<div class="card">
+<a class="btn" id="dl" href="https://github.com/UpgamesStudio/lurveta-performance/releases/latest">Descargar la última versión</a>
+<div id="ver">Buscando la versión más reciente…</div>
+</div>
+
+<div class="card">
+<strong>Instalar</strong>
+<ul>
+<li>Descarga el <code>.apk</code> e instálalo (permite «instalar apps desconocidas» si Android lo pide).</li>
+<li>Se instala junto a Winlator oficial; no lo sustituye.</li>
+<li>Los APK de las versiones publicadas comparten firma: actualizar conserva tus contenedores.</li>
+<li>Comprueba la descarga con el <code>SHA256SUMS</code> del release.</li>
+</ul>
+</div>
+
+<div class="card">
+<a href="https://github.com/UpgamesStudio/lurveta-performance/releases">Todas las versiones</a> ·
+<a href="https://github.com/UpgamesStudio/lurveta-performance/blob/main/CHANGELOG.md">Novedades</a> ·
+<a href="https://github.com/UpgamesStudio/lurveta-performance">Código fuente</a>
+</div>
+</main>
+<script>
+fetch('https://api.github.com/repos/UpgamesStudio/lurveta-performance/releases/latest')
+  .then(function(r){return r.ok?r.json():Promise.reject()})
+  .then(function(rel){
+    var apk=(rel.assets||[]).find(function(a){return /\.apk$/.test(a.name)});
+    document.getElementById('ver').textContent='Versión '+rel.tag_name+(apk?' · '+(apk.size/1048576).toFixed(0)+' MB':'');
+    if(apk) document.getElementById('dl').href=apk.browser_download_url;
+  })
+  .catch(function(){document.getElementById('ver').textContent='Abre «Todas las versiones» para ver las descargas.'});
+</script>
+</body>
+</html>
