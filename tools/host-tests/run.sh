@@ -21,6 +21,11 @@ echo "== Vortek host tests (inline uploads, BC1-BC7 reference, pipeline cache)"
 "$ROOT/tools/vortek-host-tests/run_tests.sh" "$T/vortek"
 "$ROOT/tools/vortek-vtio/run_tests.sh" "$T/vtio"
 
+echo "== X server output stream (non-blocking, ordered queue, fd passing)"
+gcc -O1 -g -fsanitize=address,undefined -Wall -I "$J" -I "$J/linux" -I "$C/winlator/include" -o "$T/xout_test" \
+    "$ROOT/tools/host-tests/xoutput_stream_test.c" "$C/winlator/src/xoutput_stream.c" -lpthread
+timeout 120 "$T/xout_test"
+
 echo "== Native crash handler (aarch64 under qemu)"
 mkdir -p /data/data/com.lurveta.co/files/logs
 aarch64-linux-gnu-gcc -O1 -g -Wall -rdynamic -funwind-tables -I "$C/vortekrenderer/include" -o "$T/crash_test" \
