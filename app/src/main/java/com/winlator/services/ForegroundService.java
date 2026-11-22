@@ -33,7 +33,7 @@ public class ForegroundService extends Service {
     private static volatile ForegroundService instance;
     private static final String TAG = "FGService";
 
-    private static final String ACTION_ENSURE_FOREGROUND = "com.winlator.action.ENSURE_FOREGROUND";
+    private static final String ACTION_ENSURE_FOREGROUND = com.winlator.BuildConfig.APPLICATION_ID + ".action.ENSURE_FOREGROUND";
 
     private static final AtomicBoolean sessionActive = new AtomicBoolean(false);
     private static final AtomicBoolean serviceRunning = new AtomicBoolean(false);
@@ -202,7 +202,7 @@ public class ForegroundService extends Service {
         if (pm != null) {
             wakeLock = pm.newWakeLock(
                     PowerManager.PARTIAL_WAKE_LOCK,
-                    "Winlator:ForegroundService"
+                    "LURVETA:ForegroundService"
             );
             wakeLock.setReferenceCounted(false);
         }
@@ -279,7 +279,7 @@ public class ForegroundService extends Service {
 
         Notification n = notificationUtils.createForegroundNotification(
                 getNotificationContent(),
-                "Winlator",
+                "LURVETA Performance",
                 XServerDisplayActivity.class, // Service class for the 'Exit' action
                 null, // Exit action here, not used because might cause issues
                 targetActivity // Activity class for the 'Open' (notification tap) action
@@ -371,7 +371,7 @@ public class ForegroundService extends Service {
     @NonNull
     private static String getNotificationContent() {
         ForegroundService svc = instance;
-        if (svc == null) return "Winlator is running in the background";
+        if (svc == null) return "LURVETA Performance is running in the background";
 
         if (sessionActive.get()) {
             return isSessionInBackground && (isDeviceLocked() || !isInPictureInPictureMode())

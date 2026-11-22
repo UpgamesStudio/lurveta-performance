@@ -34,6 +34,8 @@ typedef struct VkContext {
     VkResult status;
 
     int graphicsQueueIndex;
+    bool performanceHints;           // LURVETA: thread priority + ADPF
+    int64_t targetWorkDurationNanos; // LURVETA: ADPF target (frame budget)
 
     TextureDecoder* textureDecoder;
     ShaderInspector* shaderInspector;

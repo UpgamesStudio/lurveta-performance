@@ -1,15 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<!-- LURVETA Performance drawer header. -->
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="124dp"
     android:background="?attr/colorPrimaryDark"
-    android:paddingLeft="16dp"
-    android:paddingBottom="24dp">
+    android:orientation="horizontal"
+    android:gravity="bottom|left"
+    android:paddingLeft="12dp"
+    android:paddingBottom="18dp">
 
     <ImageView
-        android:layout_width="153dp"
+        android:layout_width="52dp"
         android:layout_height="52dp"
-        android:layout_gravity="left|bottom"
-        android:src="@drawable/logo" />
-</FrameLayout>
+        android:scaleType="fitCenter"
+        android:src="@drawable/lurveta_mark" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="4dp"
+        android:layout_marginBottom="6dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="LURVETA"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.16" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PERFORMANCE"
+            android:textColor="#00C8F5"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.34" />
+    </LinearLayout>
+</LinearLayout>

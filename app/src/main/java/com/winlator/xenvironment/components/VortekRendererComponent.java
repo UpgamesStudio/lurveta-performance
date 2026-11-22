@@ -6,7 +6,6 @@ import androidx.annotation.Keep;
 
 import com.winlator.contentdialog.VortekConfigDialog;
 import com.winlator.core.GPUHelper;
-import com.winlator.core.GeneralComponents;
 import com.winlator.core.KeyValueSet;
 import com.winlator.renderer.GPUImage;
 import com.winlator.xconnector.ConnectedClient;
@@ -42,7 +41,10 @@ public class VortekRendererComponent extends EnvironmentComponent implements Con
         public short imageCacheSize = IMAGE_CACHE_SIZE;
         public byte resourceMemoryType = 0;
         public String[] exposedDeviceExtensions = null;
-        public String libvulkanPath = null;
+        public final String libvulkanPath = null;
+        // LURVETA: priority + ADPF hints for the request thread; frame budget for ADPF.
+        public boolean performanceHints = true;
+        public int targetFrameRate = 60;
 
         public static Options fromKeyValueSet(Context context, KeyValueSet config) {
             if (config == null || config.isEmpty()) return new Options();
@@ -62,9 +64,9 @@ public class VortekRendererComponent extends EnvironmentComponent implements Con
             options.maxDeviceMemory = (short)config.getInt("maxDeviceMemory");
             options.imageCacheSize = (short)config.getInt("imageCacheSize", VortekRendererComponent.IMAGE_CACHE_SIZE);
             options.resourceMemoryType = (byte)config.getInt("resourceMemoryType");
+            options.performanceHints = config.getBoolean("performanceHints", true);
 
-            String adrenotoolsDriver = config.get("adrenotoolsDriver");
-            options.libvulkanPath = GeneralComponents.getDefinitivePath(GeneralComponents.Type.ADRENOTOOLS_DRIVER, context, adrenotoolsDriver);
+            // LURVETA: always the system Vulkan driver (adrenotools custom drivers removed).
             return options;
         }
     }

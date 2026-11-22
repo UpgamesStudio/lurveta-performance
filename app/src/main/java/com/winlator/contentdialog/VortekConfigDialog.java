@@ -7,7 +7,6 @@ import android.widget.Spinner;
 import com.winlator.R;
 import com.winlator.core.AppUtils;
 import com.winlator.core.GPUHelper;
-import com.winlator.core.GeneralComponents;
 import com.winlator.core.KeyValueSet;
 import com.winlator.core.StringUtils;
 import com.winlator.widget.MultiSelectionComboBox;
@@ -22,12 +21,12 @@ public class VortekConfigDialog extends ContentDialog {
         setIcon(R.drawable.icon_display_settings);
         setTitle("Vortek "+context.getString(R.string.configuration));
 
-        final Spinner sAdrenotoolsDriver = findViewById(R.id.SAdrenotoolsDriver);
         final Spinner sVkMaxVersion = findViewById(R.id.SVkMaxVersion);
         final Spinner sMaxDeviceMemory = findViewById(R.id.SMaxDeviceMemory);
         final Spinner sImageCacheSize = findViewById(R.id.SImageCacheSize);
         final Spinner sResourceMemoryType = findViewById(R.id.SResourceMemoryType);
         final MultiSelectionComboBox mscbExposedExtensions = findViewById(R.id.MSCBExposedExtensions);
+        final android.widget.CheckBox cbPerformanceHints = findViewById(R.id.CBPerformanceHints);
 
         final String[] deviceExtensions = GPUHelper.vkGetDeviceExtensions();
         mscbExposedExtensions.setPopupWindowWidth(360);
@@ -47,21 +46,19 @@ public class VortekConfigDialog extends ContentDialog {
             mscbExposedExtensions.setSelectedItems(selectedItems.length > 1 ? selectedItems : deviceExtensions);
         }
 
-        String adrenotoolsDriver = config.get("adrenotoolsDriver");
-        GeneralComponents.initViews(GeneralComponents.Type.ADRENOTOOLS_DRIVER, findViewById(R.id.AdrenotoolsDriverToolbox), sAdrenotoolsDriver, adrenotoolsDriver, "System");
-
         AppUtils.setSpinnerSelectionFromValue(sVkMaxVersion, config.get("vkMaxVersion", DEFAULT_VK_MAX_VERSION));
         AppUtils.setSpinnerSelectionFromMemorySize(sMaxDeviceMemory, config.get("maxDeviceMemory", "0"));
         AppUtils.setSpinnerSelectionFromNumber(sImageCacheSize, config.get("imageCacheSize", String.valueOf(VortekRendererComponent.IMAGE_CACHE_SIZE)));
         sResourceMemoryType.setSelection(config.getInt("resourceMemoryType"));
+        cbPerformanceHints.setChecked(config.getBoolean("performanceHints", true));
 
         setOnConfirmCallback(() -> {
             KeyValueSet newConfig = new KeyValueSet();
-            newConfig.put("adrenotoolsDriver", sAdrenotoolsDriver.getSelectedItem());
             newConfig.put("vkMaxVersion", StringUtils.parseNumber(sVkMaxVersion.getSelectedItem(), "0"));
             newConfig.put("maxDeviceMemory", StringUtils.parseMemorySize(sMaxDeviceMemory.getSelectedItem()));
             newConfig.put("imageCacheSize", StringUtils.parseNumber(sImageCacheSize.getSelectedItem()));
             newConfig.put("resourceMemoryType", sResourceMemoryType.getSelectedItemPosition());
+            newConfig.put("performanceHints", cbPerformanceHints.isChecked() ? "1" : "0");
 
             String[] selectedItems = mscbExposedExtensions.getSelectedItems();
             if (selectedItems.length > 0) {
@@ -75,11 +72,8 @@ public class VortekConfigDialog extends ContentDialog {
     }
 
     public static boolean isRequireRestart(String oldGraphicsDriverConfig, String newGraphicsDriverConfig) {
-        if (!oldGraphicsDriverConfig.equals(newGraphicsDriverConfig)) {
-            String oldAdrenotoolsDriver = (new KeyValueSet(oldGraphicsDriverConfig)).get("adrenotoolsDriver");
-            String newAdrenotoolsDriver = (new KeyValueSet(newGraphicsDriverConfig)).get("adrenotoolsDriver");
-            return !oldAdrenotoolsDriver.isEmpty() && !newAdrenotoolsDriver.isEmpty() && !newAdrenotoolsDriver.equals(oldAdrenotoolsDriver);
-        }
-        else return false;
+        // LURVETA: custom (adrenotools) driver loading was removed, so a Vortek configuration
+        // change never requires reloading the Vulkan library.
+        return false;
     }
 }

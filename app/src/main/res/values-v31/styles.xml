@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ system splash screen with the LURVETA mark. -->
+    <style name="LaunchTheme" parent="@style/AppThemeDark">
+        <item name="android:windowBackground">@drawable/lurveta_splash</item>
+        <item name="android:windowSplashScreenBackground">@color/ic_launcher_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/lurveta_mark</item>
+    </style>
+</resources>

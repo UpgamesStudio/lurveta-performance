@@ -1,9 +1,11 @@
+#include <time.h>
 #include "vk_context.h"
 #include "vulkan_helper.h"
 #include "request_handler.h"
 #include "sysvshared_memory.h"
 #include "string_utils.h"
 #include "jni_utils.h"
+#include "perf_hint.h"
 
 static void loadJMethods(JMethods* jmethods) {
     JNIEnv* env;
@@ -41,10 +43,22 @@ static ExtraDataRequest* waitForExtraDataRequest(VkContext* context, uint16_t re
     return context->status >= 0 ? result : NULL;
 }
 
+static inline int64_t monotonicNanos() {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (int64_t)ts.tv_sec * 1000000000ll + ts.tv_nsec;
+}
+
 static void* requestHandlerThread(void* param) {
     VkContext* context = param;
     loadJMethods(&context->jmethods);
     ExtraDataRequest* extraDataRequest = NULL;
+
+    // LURVETA: priority + ADPF. Work per frame = frame interval - time blocked waiting for requests.
+    PerfHint perfHint;
+    PerfHint_init(&perfHint, context->performanceHints, context->targetWorkDurationNanos);
+    int64_t frameStart = monotonicNanos();
+    uint64_t waitAtFrameStart = context->serverRing->waitNanos;
 
     while (context->status >= 0) {
         int requestCode = vt_recv(context->serverRing, &context->inputBuffer, &context->inputBufferSize, &context->memoryPool);
@@ -66,6 +80,15 @@ static void* requestHandlerThread(void* param) {
         HandleRequestFunc handleRequestFunc = getHandleRequestFunc(requestCode);
         if (handleRequestFunc) handleRequestFunc(context);
 
+        if (requestCode == REQUEST_CODE_VK_QUEUE_PRESENT_KHR && perfHint.session) {
+            int64_t now = monotonicNanos();
+            uint64_t waited = context->serverRing->waitNanos - waitAtFrameStart;
+            int64_t interval = now - frameStart;
+            PerfHint_report(&perfHint, interval > (int64_t)waited ? interval - (int64_t)waited : 0);
+            frameStart = now;
+            waitAtFrameStart = context->serverRing->waitNanos;
+        }
+
         vt_free(&context->memoryPool);
 
         if (extraDataRequest) {
@@ -77,6 +100,7 @@ static void* requestHandlerThread(void* param) {
         context->inputBufferSize = 0;
     }
 
+    PerfHint_close(&perfHint);
     (*context->jmethods.jvm)->DetachCurrentThread(context->jmethods.jvm);
     vt_free(&context->memoryPool);
     return NULL;
@@ -112,6 +136,9 @@ VkContext* createVkContext(JNIEnv* env, jobject obj, int clientFd, jobject optio
     context->maxDeviceMemory = getJFieldByName(env, options, "maxDeviceMemory", "S").s;
     context->imageCacheSize = getJFieldByName(env, options, "imageCacheSize", "S").s;
     context->resourceMemoryType = getJFieldByName(env, options, "resourceMemoryType", "B").b;
+    context->performanceHints = getJFieldByName(env, options, "performanceHints", "Z").z;
+    int targetFrameRate = getJFieldByName(env, options, "targetFrameRate", "I").i;
+    context->targetWorkDurationNanos = 1000000000ll / (targetFrameRate > 0 ? targetFrameRate : 60);
     context->exposedDeviceExtensions = jstringArrayToCharArray(env, exposedDeviceExtensions);
 
     pthread_mutex_init(&context->extraDataRequestsMutex, NULL);

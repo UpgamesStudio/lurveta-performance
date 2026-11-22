@@ -1,4 +1,7 @@
 // based on SwiftShader (https://github.com/google/swiftshader/blob/master/src/Device/BC_Decoder.cpp)
+// LURVETA: output texel size is now per format (BC1-3: 4 bytes BGRA, BC4: 1 byte R, BC5: 2 bytes RG).
+// Previously BC4/BC5 were written into byte 0/1 of a BGRA texel (i.e. the BLUE/GREEN channels),
+// leaving the other bytes with stale data from earlier decodes.
 
 #ifndef BC_DECODER_H
 #define BC_DECODER_H
@@ -21,13 +24,14 @@ typedef struct BCTask {
     uint16_t startY;
     uint16_t endY;
     uint8_t bcN;
+    uint8_t bpp;
     bool isAlpha;
     bool isSigned;
 } BCTask;
 
 static inline uint32_t BCDecoder_getColorIdx(const BCColor* color, int i) {
     int offset = i << 1;
-    return (color->idx & (0x3 << offset)) >> offset;
+    return (color->idx & (0x3u << offset)) >> offset; // LURVETA: unsigned (0x3 << 30 overflowed int: UB)
 }
 
 static inline uint8_t BCDecoder_getChannelIdx(uint64_t data, int i) {
@@ -58,7 +62,7 @@ static inline void BCDecoder_decodeAlpha(uint64_t data, uint8_t* dst, int x, int
     }
 }
 
-static inline void BCDecoder_decodeChannel(uint64_t data, uint8_t* dst, int x, int y, int width, int endY, int stride, int channel, bool isSigned) {
+static inline void BCDecoder_decodeChannel(uint64_t data, uint8_t* dst, int x, int y, int width, int endY, int stride, int channel, int pixelStride, bool isSigned) {
     int c[8] = {0};
 
     if (isSigned) {
@@ -88,7 +92,7 @@ static inline void BCDecoder_decodeChannel(uint64_t data, uint8_t* dst, int x, i
         dstOffset = j * stride + channel;
         srcOffset = j * BC_BLOCK;
         for (i = 0; i < BC_BLOCK && (x + i) < width; i++) {
-            dst[dstOffset + (i * 4)] = (uint8_t)c[BCDecoder_getChannelIdx(data, srcOffset + i)];
+            dst[dstOffset + (i * pixelStride)] = (uint8_t)c[BCDecoder_getChannelIdx(data, srcOffset + i)];
         }
     }
 }
@@ -129,8 +133,8 @@ static inline void BCDecoder_decodeColor(const BCColor* color, uint8_t* dst, int
 
 static inline void BCDecoder_decodeThread(void* param) {
     BCTask* task = param;
-    const int stride = task->width * 4;
-    const int dx = 4 * BC_BLOCK;
+    const int stride = task->width * task->bpp;
+    const int dx = task->bpp * BC_BLOCK;
     const int dy = stride * BC_BLOCK;
 
     switch (task->bcN) {
@@ -163,7 +167,7 @@ static inline void BCDecoder_decodeThread(void* param) {
                 uint8_t* dstRow = task->dst;
                 for (x = 0; x < task->width; x += BC_BLOCK, alpha += 2, color += 2, dstRow += dx) {
                     BCDecoder_decodeColor(color, dstRow, x, y, task->width, task->endY, stride, task->isAlpha, true);
-                    BCDecoder_decodeChannel(*alpha, dstRow, x, y, task->width, task->endY, stride, 3, task->isSigned);
+                    BCDecoder_decodeChannel(*alpha, dstRow, x, y, task->width, task->endY, stride, 3, 4, task->isSigned);
                 }
             }
             break;
@@ -173,7 +177,7 @@ static inline void BCDecoder_decodeThread(void* param) {
             for (int x, y = task->startY; y < task->endY; y += BC_BLOCK, task->dst += dy) {
                 uint8_t* dstRow = task->dst;
                 for (x = 0; x < task->width; x += BC_BLOCK, red++, dstRow += dx) {
-                    BCDecoder_decodeChannel(*red, dstRow, x, y, task->width, task->endY, stride, 0, task->isSigned);
+                    BCDecoder_decodeChannel(*red, dstRow, x, y, task->width, task->endY, stride, 0, 1, task->isSigned);
                 }
             }
             break;
@@ -184,8 +188,8 @@ static inline void BCDecoder_decodeThread(void* param) {
             for (int x, y = task->startY; y < task->endY; y += BC_BLOCK, task->dst += dy) {
                 uint8_t* dstRow = task->dst;
                 for (x = 0; x < task->width; x += BC_BLOCK, red += 2, green += 2, dstRow += dx) {
-                    BCDecoder_decodeChannel(*red, dstRow, x, y, task->width, task->endY, stride, 0, task->isSigned);
-                    BCDecoder_decodeChannel(*green, dstRow, x, y, task->width, task->endY, stride, 1, task->isSigned);
+                    BCDecoder_decodeChannel(*red, dstRow, x, y, task->width, task->endY, stride, 0, 2, task->isSigned);
+                    BCDecoder_decodeChannel(*green, dstRow, x, y, task->width, task->endY, stride, 1, 2, task->isSigned);
                 }
             }
             break;
@@ -193,10 +197,15 @@ static inline void BCDecoder_decodeThread(void* param) {
     }
 }
 
+static inline int BCDecoder_getOutputTexelSize(int bcN) {
+    return bcN == 4 ? 1 : (bcN == 5 ? 2 : 4);
+}
+
 static inline void BCDecoder_decode(const uint8_t* src, uint8_t* dst, int width, int height, int bcN, bool isNoAlphaU, ThreadPool* threadPool) {
     const bool isAlpha = (bcN == 1) && !isNoAlphaU;
     const bool isSigned = (bcN == 4 || bcN == 5) && !isNoAlphaU;
-    const int stride = width * 4;
+    const int bpp = BCDecoder_getOutputTexelSize(bcN);
+    const int stride = width * bpp;
     const int dy = stride * BC_BLOCK;
     const int skipWidth = BC_ROUNDUP(width) / BC_BLOCK;
     const int blockSize = bcN == 1 ? 8 : 16;
@@ -209,6 +218,7 @@ static inline void BCDecoder_decode(const uint8_t* src, uint8_t* dst, int width,
     for (int i = 0; i < numTasks; i++) {
         BCTask* task = tasks + i;
         task->bcN = bcN;
+        task->bpp = bpp;
         task->width = width;
         task->startY = i * chunkHeight;
         task->endY = i < numTasks-1 ? task->startY + chunkHeight : height;

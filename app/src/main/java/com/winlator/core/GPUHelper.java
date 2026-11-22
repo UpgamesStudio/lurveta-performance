@@ -164,6 +164,9 @@ public abstract class GPUHelper {
 
     public static native String[] vkGetDeviceExtensions();
 
+    /** LURVETA: Vulkan device identity as "key=value" strings (see HardwareInfo). */
+    public static native String[] vkGetDeviceInfo();
+
     @CriticalNative
     public static native int vkGetApiVersion();
 

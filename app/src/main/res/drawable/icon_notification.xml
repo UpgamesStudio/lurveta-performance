@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LURVETA status-bar icon (white silhouette of the mark). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="56"
+    android:viewportHeight="56">
+    <group android:translateX="-28" android:translateY="-25">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M44.5,28 L56.5,28 L47,66 L79,66 L76,78 L32,78 Z M60,33 L80,45.5 L56.5,58 Z" />
+    </group>
+</vector>

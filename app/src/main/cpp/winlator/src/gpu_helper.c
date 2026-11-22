@@ -124,6 +124,85 @@ done:
     return version;
 }
 
+/*
+ * LURVETA: Vulkan device identity used for GPU detection (ARM Mali / Immortalis, Qualcomm Adreno,
+ * Imagination PowerVR, Samsung Xclipse, ...). Returns "key=value" strings; empty array on failure.
+ */
+JNIEXPORT jobjectArray JNICALL
+Java_com_winlator_core_GPUHelper_vkGetDeviceInfo(JNIEnv *env, jclass obj) {
+    char lines[12][288];
+    int lineCount = 0;
+    VkInstance instance = VK_NULL_HANDLE;
+
+    void* libvulkan = dlopen(LIBVULKAN_PATH, RTLD_NOW | RTLD_LOCAL);
+    if (!libvulkan) goto done;
+
+    PFN_vkCreateInstance vkCreateInstance = dlsym(libvulkan, "vkCreateInstance");
+    PFN_vkDestroyInstance vkDestroyInstance = dlsym(libvulkan, "vkDestroyInstance");
+    PFN_vkEnumeratePhysicalDevices vkEnumeratePhysicalDevices = dlsym(libvulkan, "vkEnumeratePhysicalDevices");
+    PFN_vkGetPhysicalDeviceProperties vkGetPhysicalDeviceProperties = dlsym(libvulkan, "vkGetPhysicalDeviceProperties");
+    PFN_vkGetPhysicalDeviceProperties2 vkGetPhysicalDeviceProperties2 = dlsym(libvulkan, "vkGetPhysicalDeviceProperties2");
+    PFN_vkGetPhysicalDeviceFeatures vkGetPhysicalDeviceFeatures = dlsym(libvulkan, "vkGetPhysicalDeviceFeatures");
+    if (!vkCreateInstance || !vkEnumeratePhysicalDevices || !vkGetPhysicalDeviceProperties) goto done;
+
+    VkApplicationInfo appInfo = {0};
+    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    appInfo.apiVersion = VK_API_VERSION_1_1;
+
+    VkInstanceCreateInfo createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    createInfo.pApplicationInfo = &appInfo;
+    if (vkCreateInstance(&createInfo, NULL, &instance) != VK_SUCCESS) goto done;
+
+    uint32_t deviceCount = 1;
+    VkPhysicalDevice physicalDevice;
+    VkResult result = vkEnumeratePhysicalDevices(instance, &deviceCount, &physicalDevice);
+    if ((result != VK_SUCCESS && result != VK_INCOMPLETE) || deviceCount == 0) goto done;
+
+    VkPhysicalDeviceProperties properties = {0};
+    VkPhysicalDeviceDriverProperties driverProperties = {0};
+    driverProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
+
+    vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+    if (vkGetPhysicalDeviceProperties2 && properties.apiVersion >= VK_API_VERSION_1_2) {
+        VkPhysicalDeviceProperties2 properties2 = {0};
+        properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        properties2.pNext = &driverProperties;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &properties2);
+    }
+
+    VkPhysicalDeviceFeatures features = {0};
+    if (vkGetPhysicalDeviceFeatures) vkGetPhysicalDeviceFeatures(physicalDevice, &features);
+
+    snprintf(lines[lineCount++], sizeof(lines[0]), "vendorID=%u", properties.vendorID);
+    snprintf(lines[lineCount++], sizeof(lines[0]), "deviceID=%u", properties.deviceID);
+    snprintf(lines[lineCount++], sizeof(lines[0]), "deviceName=%s", properties.deviceName);
+    snprintf(lines[lineCount++], sizeof(lines[0]), "apiVersion=%u", properties.apiVersion);
+    snprintf(lines[lineCount++], sizeof(lines[0]), "driverVersion=%u", properties.driverVersion);
+    snprintf(lines[lineCount++], sizeof(lines[0]), "deviceType=%d", properties.deviceType);
+    snprintf(lines[lineCount++], sizeof(lines[0]), "driverID=%d", driverProperties.driverID);
+    snprintf(lines[lineCount++], sizeof(lines[0]), "driverName=%s", driverProperties.driverName);
+    snprintf(lines[lineCount++], sizeof(lines[0]), "driverInfo=%s", driverProperties.driverInfo);
+    snprintf(lines[lineCount++], sizeof(lines[0]), "textureCompressionBC=%d", features.textureCompressionBC);
+    snprintf(lines[lineCount++], sizeof(lines[0]), "textureCompressionETC2=%d", features.textureCompressionETC2);
+    snprintf(lines[lineCount++], sizeof(lines[0]), "textureCompressionASTC_LDR=%d", features.textureCompressionASTC_LDR);
+
+done:
+    if (instance) {
+        PFN_vkDestroyInstance destroyInstance = libvulkan ? dlsym(libvulkan, "vkDestroyInstance") : NULL;
+        if (destroyInstance) destroyInstance(instance, NULL);
+    }
+    if (libvulkan) dlclose(libvulkan);
+
+    jobjectArray stringArray = (*env)->NewObjectArray(env, lineCount, (*env)->FindClass(env, "java/lang/String"), 0);
+    for (int i = 0; i < lineCount; i++) {
+        jstring string = (*env)->NewStringUTF(env, lines[i]);
+        (*env)->SetObjectArrayElement(env, stringArray, i, string);
+        (*env)->DeleteLocalRef(env, string);
+    }
+    return stringArray;
+}
+
 JNIEXPORT void JNICALL
 Java_com_winlator_core_GPUHelper_setGlobalEGLContext(JNIEnv *env, jclass obj) {
     globalEGLContext = eglGetCurrentContext();

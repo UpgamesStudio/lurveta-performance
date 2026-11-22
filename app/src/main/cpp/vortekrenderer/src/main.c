@@ -8,33 +8,15 @@
 #include "vulkan_helper.h"
 #include "jni_utils.h"
 
-#include "adrenotools/driver.h"
 
 VulkanWrapper vulkanWrapper = {0};
 bool vortekSerializerCastVkObject = true;
 
 static void* openVulkanLibrary(JNIEnv* env, jstring nativeLibraryDir, jstring libvulkanPath) {
-    void* libvulkan;
-    if (libvulkanPath) {
-        const char* nativeLibraryDirC = (*env)->GetStringUTFChars(env, nativeLibraryDir, NULL);
-        const char* libvulkanPathC = (*env)->GetStringUTFChars(env, libvulkanPath, NULL);
-        const char* libvulkanName = basename(libvulkanPathC);
-
-        char libvulkanDir[PATH_MAX] = {0};
-        strcpy(libvulkanDir, dirname(libvulkanPathC));
-        strcat(libvulkanDir, "/");
-
-        char* tmpDir;
-        asprintf(&tmpDir, "%s%s", libvulkanDir, "tmp");
-        mkdir(tmpDir, S_IRWXU | S_IRWXG);
-
-        libvulkan = adrenotools_open_libvulkan(RTLD_NOW | RTLD_LOCAL, ADRENOTOOLS_DRIVER_CUSTOM, tmpDir, nativeLibraryDirC, libvulkanDir, libvulkanName, NULL, NULL);
-
-        (*env)->ReleaseStringUTFChars(env, nativeLibraryDir, nativeLibraryDirC);
-        (*env)->ReleaseStringUTFChars(env, libvulkanPath, libvulkanPathC);
-    }
-    else libvulkan = dlopen(LIBVULKAN_PATH, RTLD_NOW | RTLD_LOCAL);
-
+    // LURVETA: always use the system Vulkan driver (ARM Mali on the target hardware).
+    // Loading custom Qualcomm drivers through libadrenotools was removed.
+    (void)env; (void)nativeLibraryDir; (void)libvulkanPath;
+    void* libvulkan = dlopen(LIBVULKAN_PATH, RTLD_NOW | RTLD_LOCAL);
     if (!libvulkan) println("vortek: unable to open libvulkan: %s", dlerror());
     return libvulkan;
 }

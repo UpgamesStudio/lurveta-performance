@@ -28,7 +28,8 @@ public abstract class GeneralComponents {
     private static final String INSTALLABLE_COMPONENTS_URL = "https://raw.githubusercontent.com/brunodev85/winlator/main/installable_components/%s";
 
     public enum Type {
-        BOX64, TURNIP, DXVK, VKD3D, WINED3D, SOUNDFONT, ADRENOTOOLS_DRIVER;
+        // LURVETA: TURNIP and ADRENOTOOLS_DRIVER (Qualcomm Adreno only) were removed.
+        BOX64, DXVK, VKD3D, WINED3D, SOUNDFONT;
 
         private String lowerName() {
             return name().toLowerCase(Locale.ENGLISH);
@@ -38,8 +39,6 @@ public abstract class GeneralComponents {
             switch (this) {
                 case BOX64:
                     return "Box64";
-                case TURNIP:
-                    return "Turnip";
                 case DXVK:
                     return "DXVK";
                 case VKD3D:
@@ -48,8 +47,6 @@ public abstract class GeneralComponents {
                     return "WineD3D";
                 case SOUNDFONT:
                     return "SoundFont";
-                case ADRENOTOOLS_DRIVER:
-                    return "Adrenotools Driver";
             }
 
             return "";
@@ -59,8 +56,6 @@ public abstract class GeneralComponents {
             switch (this) {
                 case BOX64:
                     return "box64";
-                case TURNIP:
-                    return "graphics_driver";
                 case WINED3D:
                 case DXVK:
                 case VKD3D:
@@ -77,8 +72,6 @@ public abstract class GeneralComponents {
             switch (this) {
                 case SOUNDFONT:
                     return new File(componentDir, identifier+".sf2");
-                case ADRENOTOOLS_DRIVER:
-                    return new File(componentDir, identifier);
                 default:
                     return new File(componentDir, lowerName()+"-"+identifier+".tzst");
             }
@@ -102,7 +95,7 @@ public abstract class GeneralComponents {
 
         private InstallMode getInstallMode() {
             InstallMode installMode;
-            if (this == Type.SOUNDFONT || this == ADRENOTOOLS_DRIVER) {
+            if (this == Type.SOUNDFONT) {
                 installMode = InstallMode.FILE;
             }
             else if (this == Type.WINED3D || this == Type.DXVK || this == Type.VKD3D) {
@@ -113,7 +106,7 @@ public abstract class GeneralComponents {
         }
 
         private boolean isVersioned() {
-            return this == BOX64 || this == TURNIP || this == DXVK || this == VKD3D || this == WINED3D;
+            return this == BOX64 || this == DXVK || this == VKD3D || this == WINED3D;
         }
     }
 
@@ -123,9 +116,6 @@ public abstract class GeneralComponents {
         switch (type) {
             case BOX64:
                 items = new String[]{DefaultVersion.BOX64};
-                break;
-            case TURNIP:
-                items = new String[]{DefaultVersion.TURNIP};
                 break;
             case DXVK:
                 items = new String[]{DefaultVersion.MINOR_DXVK, DefaultVersion.MAJOR_DXVK};
@@ -138,9 +128,6 @@ public abstract class GeneralComponents {
                 break;
             case SOUNDFONT:
                 items = new String[]{DefaultVersion.SOUNDFONT};
-                break;
-            case ADRENOTOOLS_DRIVER:
-                items = new String[]{"System"};
                 break;
         }
 
@@ -181,22 +168,6 @@ public abstract class GeneralComponents {
             destination = new File(destination, filename);
             FileUtils.copy(context, type.assetFolder()+"/"+filename, destination);
             return destination.getPath();
-        }
-        else if (type == Type.ADRENOTOOLS_DRIVER) {
-            if (isBuiltinComponent(type, identifier)) return null;
-            File source = type.getSource(context, identifier);
-            File[] manifestFiles = source.listFiles((file, name) -> name.endsWith(".json"));
-            if (manifestFiles != null) {
-                try {
-                    JSONObject manifestJSONObject = new JSONObject(FileUtils.readString(manifestFiles[0]));
-                    String libraryName = manifestJSONObject.optString("libraryName", "");
-                    File libraryFile = new File(source, libraryName);
-                    return libraryFile.isFile() ? libraryFile.getPath() : null;
-                }
-                catch (JSONException e) {
-                    return null;
-                }
-            }
         }
 
         return type.getSource(context, identifier).getPath();
@@ -285,18 +256,6 @@ public abstract class GeneralComponents {
                         File destination = new File(getComponentDir(type, activity), filename);
                         if (destination.isFile()) FileUtils.delete(destination);
                         if (FileUtils.copy(source, destination)) loadSpinner(type, spinner, parseDisplayText(type, filename), defaultItem);
-                        break;
-                    }
-                    case ADRENOTOOLS_DRIVER: {
-                        byte[] manifestData = ZipUtils.read(source, "*.json");
-                        if (manifestData != null) {
-                            JSONObject manifestJSONObject = new JSONObject(new String(manifestData));
-                            String filename = manifestJSONObject.optString("name", manifestJSONObject.optString("libraryName", ""));
-                            File destination = new File(getComponentDir(type, activity), filename);
-                            if (destination.isDirectory()) FileUtils.delete(destination);
-                            destination.mkdirs();
-                            if (ZipUtils.extract(source, destination)) loadSpinner(type, spinner, filename, defaultItem);
-                        }
                         break;
                     }
                     default: {

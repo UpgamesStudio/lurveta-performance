@@ -164,11 +164,13 @@ public abstract class TarCompressorUtils {
                 }
                 else {
                     if (entry.isSymbolicLink()) {
-                        FileUtils.symlink(entry.getLinkName(), file.getAbsolutePath());
+                        // LURVETA: absolute symlink targets into the legacy rootfs are relocated.
+                        FileUtils.symlink(PathRelocator.relocate(entry.getLinkName()), file.getAbsolutePath());
                     }
                     else {
                         try (BufferedOutputStream outStream = new BufferedOutputStream(new FileOutputStream(file), StreamUtils.BUFFER_SIZE)) {
-                            if (!StreamUtils.copy(tar, outStream)) return false;
+                            // LURVETA: equal-length relocation of the compiled-in rootfs path (see PathRelocator).
+                            if (PathRelocator.copy(tar, outStream) < 0) return false;
                         }
                     }
                 }

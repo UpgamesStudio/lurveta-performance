@@ -13,6 +13,7 @@ typedef struct RingBuffer {
     void* buffer;
     void* sharedData;
     uint32_t bufferSize;
+    uint64_t waitNanos; // LURVETA: time spent blocked waiting for data (process-local, not shared)
 } RingBuffer;
 
 #define RING_STATUS_IDLE (1u<<0)

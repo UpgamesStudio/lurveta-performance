@@ -14,6 +14,8 @@ import com.winlator.ContainerDetailFragment;
 import com.winlator.R;
 import com.winlator.ShortcutsFragment;
 import com.winlator.box64.Box64PresetManager;
+import android.widget.TextView;
+import com.winlator.core.PerformanceProfiles;
 import com.winlator.container.GraphicsDrivers;
 import com.winlator.container.Shortcut;
 import com.winlator.core.AppUtils;
@@ -87,6 +89,38 @@ public class ShortcutSettingsDialog extends ContentDialog {
 
         final Spinner sControlsProfile = findViewById(R.id.SControlsProfile);
         loadControlsProfileSpinner(sControlsProfile, shortcut.getExtra("controlsProfile", "0"));
+
+        // LURVETA: per-game performance profile (explicit user choice; fills the fields only).
+        final Spinner sLurvetaProfile = findViewById(R.id.SLurvetaProfile);
+        final TextView tvLurvetaProfileHint = findViewById(R.id.TVLurvetaProfileHint);
+        String[] profileNames = context.getResources().getStringArray(R.array.lurveta_profile_entries);
+        PerformanceProfiles.Id suggested = PerformanceProfiles.suggest(context);
+        tvLurvetaProfileHint.setText(context.getString(R.string.profile_hint, profileNames[suggested.ordinal()]));
+        final int initialProfilePosition = PerformanceProfiles.parse(shortcut.getExtra("lurvetaProfile")).ordinal();
+        sLurvetaProfile.setSelection(initialProfilePosition, false);
+        sLurvetaProfile.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            private boolean firstCallback = true;
+
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                // Android may fire once for the initial selection: never overwrite saved tweaks then.
+                if (firstCallback) {
+                    firstCallback = false;
+                    if (position == initialProfilePosition) return;
+                }
+                PerformanceProfiles.Profile profile = PerformanceProfiles.get(PerformanceProfiles.Id.values()[position]);
+                if (profile == null) return;
+                Box64PresetManager.loadSpinner(sBox64Preset, profile.box64Preset);
+                ContainerDetailFragment.loadScreenSizeSpinner(getContentView(), profile.screenSize);
+                if (graphicsDriverPicker.getGraphicsDriver().startsWith(GraphicsDrivers.VORTEK)) {
+                    graphicsDriverPicker.setVulkanConfigValue("imageCacheSize", profile.vortekImageCacheSizeMB);
+                    graphicsDriverPicker.setVulkanConfigValue("performanceHints", profile.performanceHints ? "1" : "0");
+                }
+            }
+
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
 
         final Spinner sDInputMapperType = findViewById(R.id.SDInputMapperType);
         sDInputMapperType.setSelection(Byte.parseByte(shortcut.getExtra("dinputMapperType", String.valueOf(GamepadHandler.DINPUT_MAPPER_TYPE_XINPUT))));
@@ -162,6 +196,9 @@ public class ShortcutSettingsDialog extends ContentDialog {
             ArrayList<ControlsProfile> profiles = inputControlsManager.getProfiles(true);
             int controlsProfile = sControlsProfile.getSelectedItemPosition() > 0 ? profiles.get(sControlsProfile.getSelectedItemPosition()-1).id : 0;
             shortcut.putExtra("controlsProfile", controlsProfile > 0 ? String.valueOf(controlsProfile) : null);
+
+            PerformanceProfiles.Id lurvetaProfile = PerformanceProfiles.Id.values()[sLurvetaProfile.getSelectedItemPosition()];
+            shortcut.putExtra("lurvetaProfile", lurvetaProfile != PerformanceProfiles.Id.CUSTOM ? lurvetaProfile.name() : null);
 
             int dinputMapperType = sDInputMapperType.getSelectedItemPosition();
             shortcut.putExtra("dinputMapperType", dinputMapperType != GamepadHandler.DINPUT_MAPPER_TYPE_XINPUT ? String.valueOf(dinputMapperType) : null);
