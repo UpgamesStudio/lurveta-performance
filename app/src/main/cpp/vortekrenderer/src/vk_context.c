@@ -8,6 +8,10 @@
 #include "jni_utils.h"
 #include "perf_hint.h"
 
+#ifndef LURVETA_BUILD_ID
+#define LURVETA_BUILD_ID "unknown"
+#endif
+
 static void loadJMethods(JMethods* jmethods) {
     JNIEnv* env;
     (*jmethods->jvm)->AttachCurrentThread(jmethods->jvm, &env, NULL);
@@ -62,6 +66,21 @@ static const char* resultToString(VkResult result) {
         case VK_ERROR_INITIALIZATION_FAILED: return "VK_ERROR_INITIALIZATION_FAILED";
         case VK_ERROR_SURFACE_LOST_KHR: return "VK_ERROR_SURFACE_LOST_KHR";
         case VK_TIMEOUT: return "VK_TIMEOUT";
+        case VK_SUCCESS: return "VK_SUCCESS";
+        case VK_NOT_READY: return "VK_NOT_READY";
+        case VK_INCOMPLETE: return "VK_INCOMPLETE";
+        case VK_SUBOPTIMAL_KHR: return "VK_SUBOPTIMAL_KHR";
+        case VK_ERROR_FORMAT_NOT_SUPPORTED: return "VK_ERROR_FORMAT_NOT_SUPPORTED";
+        case VK_ERROR_OUT_OF_DATE_KHR: return "VK_ERROR_OUT_OF_DATE_KHR";
+        case VK_ERROR_EXTENSION_NOT_PRESENT: return "VK_ERROR_EXTENSION_NOT_PRESENT";
+        case VK_ERROR_FEATURE_NOT_PRESENT: return "VK_ERROR_FEATURE_NOT_PRESENT";
+        case VK_ERROR_INCOMPATIBLE_DRIVER: return "VK_ERROR_INCOMPATIBLE_DRIVER";
+        case VK_ERROR_LAYER_NOT_PRESENT: return "VK_ERROR_LAYER_NOT_PRESENT";
+        case VK_ERROR_MEMORY_MAP_FAILED: return "VK_ERROR_MEMORY_MAP_FAILED";
+        case VK_ERROR_TOO_MANY_OBJECTS: return "VK_ERROR_TOO_MANY_OBJECTS";
+        case VK_ERROR_FRAGMENTED_POOL: return "VK_ERROR_FRAGMENTED_POOL";
+        case VK_ERROR_OUT_OF_POOL_MEMORY: return "VK_ERROR_OUT_OF_POOL_MEMORY";
+        case VK_ERROR_INVALID_EXTERNAL_HANDLE: return "VK_ERROR_INVALID_EXTERNAL_HANDLE";
         default: return "VK_ERROR";
     }
 }
@@ -90,6 +109,15 @@ void VkContext_reportError(VkContext* context, const char* where, VkResult resul
 }
 
 #define VORTEK_DIAG_LOG VORTEK_ERROR_LOG_DIR "/vortek-diagnostics.log"
+#define JOURNAL_SIZE 400
+#define JOURNAL_NO_REPLY 0x7fffffff
+
+typedef struct JournalEntry {
+    int16_t request;
+    int32_t result;
+    uint32_t count;
+    uint32_t firstMs;
+} JournalEntry;
 #define VORTEK_DIAG_MAX_LINES 200
 
 static void diagWrite(VkContext* context, const char* kind, const char* call, VkResult result, const char* fmt, va_list args) {
@@ -130,10 +158,61 @@ void VkContext_logInfo(VkContext* context, const char* fmt, ...) {
 
 // One file per Vulkan client process: vortek-activity-<pid>.txt (several clients can be connected).
 
+static void journalRecord(VkContext* context, int request, int result) {
+    if (!context->journal) return;
+    pthread_mutex_lock(&context->journalMutex);
+    int last = (context->journalHead + JOURNAL_SIZE - 1) % JOURNAL_SIZE;
+    JournalEntry* entry = context->journalCount > 0 ? &context->journal[last] : NULL;
+    if (entry && entry->request == request && entry->result == result) {
+        entry->count++;
+    }
+    else {
+        entry = &context->journal[context->journalHead];
+        entry->request = (int16_t)request;
+        entry->result = result;
+        entry->count = 1;
+        entry->firstMs = (uint32_t)((monotonicNanos() - context->connectNanos) / 1000000);
+        context->journalHead = (context->journalHead + 1) % JOURNAL_SIZE;
+        if (context->journalCount < JOURNAL_SIZE) context->journalCount++;
+    }
+    context->journalVersion++;
+    pthread_mutex_unlock(&context->journalMutex);
+
+    // The first real error of a call (capability queries legitimately answer "not supported").
+    const char* name = requestCodeToString((short)request);
+    if (result < 0 && result != JOURNAL_NO_REPLY && !context->firstErrorLogged && !strstr(name, "GetPhysicalDevice") && !strstr(name, "Enumerate")) {
+        context->firstErrorLogged = true;
+        VkContext_logFailure(context, name, (VkResult)result, "FIRST ERROR returned to this client (see vortek-journal-%d.txt)", context->clientPid);
+    }
+}
+
+static void journalWrite(VkContext* context) {
+    if (!context->journal) return;
+    char tmpPath[sizeof(context->journalPath) + 8];
+    snprintf(tmpPath, sizeof(tmpPath), "%s.tmp", context->journalPath);
+    FILE* file = fopen(tmpPath, "w");
+    if (!file) return;
+    pthread_mutex_lock(&context->journalMutex);
+    fprintf(file, "# Vortek call journal, client pid %d, build %s: time since connection, call, x repetitions, result returned\n", context->clientPid, LURVETA_BUILD_ID);
+    int start = (context->journalHead + JOURNAL_SIZE - context->journalCount) % JOURNAL_SIZE;
+    for (int i = 0; i < context->journalCount; i++) {
+        JournalEntry* entry = &context->journal[(start + i) % JOURNAL_SIZE];
+        char result[48];
+        if (entry->result == JOURNAL_NO_REPLY) snprintf(result, sizeof(result), "-");
+        else if (entry->result <= 0) snprintf(result, sizeof(result), "%s", resultToString((VkResult)entry->result));
+        else snprintf(result, sizeof(result), "%d", entry->result);
+        fprintf(file, "+%u.%03us %s x%u -> %s\n", entry->firstMs / 1000, entry->firstMs % 1000, requestCodeToString(entry->request), entry->count, result);
+    }
+    pthread_mutex_unlock(&context->journalMutex);
+    fclose(file);
+    rename(tmpPath, context->journalPath);
+}
+
 static void* activityThread(void* param) {
     VkContext* context = param;
     char tmpPath[sizeof(context->activityPath) + 8];
     snprintf(tmpPath, sizeof(tmpPath), "%s.tmp", context->activityPath);
+    uint64_t writtenJournal = 0;
     while (!context->shuttingDown) {
         for (int i = 0; i < 20 && !context->shuttingDown; i++) usleep(100000);
         if (context->shuttingDown) break;
@@ -157,7 +236,12 @@ static void* activityThread(void* param) {
         }
         fclose(file);
         rename(tmpPath, context->activityPath);
+        if (context->journalVersion != writtenJournal) {
+            writtenJournal = context->journalVersion;
+            journalWrite(context);
+        }
     }
+    journalWrite(context);
     return NULL;
 }
 
@@ -193,7 +277,9 @@ static void* requestHandlerThread(void* param) {
         context->requestStartNanos = monotonicNanos();
         context->currentRequest = requestCode;
         context->requestCount++;
+        vt_replyCount = 0;
         if (handleRequestFunc) handleRequestFunc(context);
+        journalRecord(context, requestCode, vt_replyCount > 0 ? vt_replyResult : JOURNAL_NO_REPLY);
         context->lastRequest = requestCode;
         context->currentRequest = -1;
         context->requestEndNanos = monotonicNanos();
@@ -291,10 +377,14 @@ VkContext* createVkContext(JNIEnv* env, jobject obj, int clientFd, jobject optio
     socklen_t credLength = sizeof(cred);
     if (getsockopt(clientFd, SOL_SOCKET, SO_PEERCRED, &cred, &credLength) == 0) context->clientPid = cred.pid;
     snprintf(context->activityPath, sizeof(context->activityPath), VORTEK_ERROR_LOG_DIR "/vortek-activity-%d.txt", context->clientPid > 0 ? context->clientPid : -clientFd);
+    snprintf(context->journalPath, sizeof(context->journalPath), VORTEK_ERROR_LOG_DIR "/vortek-journal-%d.txt", context->clientPid > 0 ? context->clientPid : -clientFd);
+    context->journal = calloc(JOURNAL_SIZE, sizeof(JournalEntry));
+    pthread_mutex_init(&context->journalMutex, NULL);
+    context->connectNanos = monotonicNanos();
     mkdir(VORTEK_ERROR_LOG_DIR, 0771);
     pthread_create(&context->activityThread, NULL, activityThread, context);
 
-    VkContext_logInfo(context, "STAGE client-connected pid %d (upload mode %d, pipeline cache %d)", context->clientPid, context->textureUploadMode, (int)context->persistentPipelineCache);
+    VkContext_logInfo(context, "STAGE client-connected pid %d build %s (upload mode %d, pipeline cache %d)", context->clientPid, LURVETA_BUILD_ID, context->textureUploadMode, (int)context->persistentPipelineCache);
 
     return context;
 }
@@ -351,6 +441,10 @@ void destroyVkContext(JNIEnv* env, VkContext* context) {
     context->disabledDeviceExtensions = NULL;
 
     FenceExport_free(&context->fenceExport);
+    if (context->journal) {
+        pthread_mutex_destroy(&context->journalMutex);
+        MEMFREE(context->journal);
+    }
     ArrayList_free(&context->extraDataRequests, true);
     pthread_mutex_destroy(&context->extraDataRequestsMutex);
 

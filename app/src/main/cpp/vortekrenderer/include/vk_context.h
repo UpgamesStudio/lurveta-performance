@@ -59,7 +59,17 @@ typedef struct VkContext {
     volatile int64_t requestStartNanos;
     volatile int64_t requestEndNanos;
     pthread_t activityThread;
-    FenceExport fenceExport;          // LURVETA: real state of fences exported as SYNC_FD (see fence_export.h)
+    FenceExport fenceExport;
+    /* LURVETA call journal: every Vulkan request of this client with the result it returned,
+     * consecutive identical (call, result) pairs merged; written to vortek-journal-<pid>.txt. */
+    struct JournalEntry* journal;
+    int journalHead;
+    int journalCount;
+    uint64_t journalVersion;
+    pthread_mutex_t journalMutex;
+    int64_t connectNanos;
+    bool firstErrorLogged;
+    char journalPath[160];          // LURVETA: real state of fences exported as SYNC_FD (see fence_export.h)
     int clientPid;                    // LURVETA: pid of the Vulkan client process (SO_PEERCRED), 0 if unknown
     char activityPath[160];
     bool errorReported;           // LURVETA: fatal error already logged and signalled to the client

@@ -14,6 +14,41 @@
 | Estabilidad | Sin datos | Sin datos |
 | Rendimiento | Sin mediciones | Sin mediciones |
 
+## GTA V, segundo informe (tras la corrección de fences): análisis
+
+Comparación con el informe anterior (misma instalación «GTA V LITE V13.2 OptiJuegos», mismo contenedor):
+
+| | Antes | Después |
+|---|---|---|
+| `Failed to sync fence: VK_ERROR_DEVICE_LOST` en el log de DXVK | sí | **no** |
+| Llamadas / envíos / presentaciones de `GTA5.exe` | 389 / 2 / 0 | 389 / 2 / 0 |
+| Última llamada Vulkan de `GTA5.exe` | `vkDestroyInstance` | `vkDestroyInstance` (~T+31 s) |
+| `GTA5.exe` cuando terminó la sesión | (no medido) | **vivo**, 13–24 % de CPU, sin actividad Vulkan |
+| Fin | el proceso principal de Wine (escritorio) sale con código 1 ~10 s después | lo mismo, ~12 s después; `wfm.exe` y `explorer.exe` terminan en el mismo instante |
+
+**Hechos:**
+- El error del fence ya no aparece, lo que es coherente con que la corrección se ejecutó, pero no lo demuestra.
+- El código 1 es del proceso principal de Wine (`explorer /desktop` + gestor de archivos `wfm.exe`), **no de GTA V**, que seguía en ejecución.
+- `GTA5.exe` inicializa DXVK (varias instancias y dispositivos), destruye la instancia sin crear ningún swapchain y se queda en segundo plano.
+
+**Qué faltaba para ir más lejos:**
+- La secuencia de llamadas Vulkan de GTA V con sus resultados.
+- Las líneas de error de Wine, que estaban **ocultas** bajo miles de avisos `glVertex…NV not found` generados por `BOX64_LOG=1` (activado por la propia captura).
+- Un identificador inequívoco de la compilación.
+
+**Añadido en 1.1.1‑dev6:**
+- Diario de llamadas Vulkan por cliente (`vortek-journal-<pid>.txt`): cada llamada con su resultado real, en orden y con tiempo; el primer error real queda marcado (`FIRST ERROR`).
+- Extracción de **todas** las líneas de error de la salida completa de Box64/Wine, con el ruido filtrado y contado.
+- Procesos del juego vivos al terminar la sesión.
+- Commit y hora de compilación en cada informe.
+
+**Hipótesis abiertas (sin confirmar):**
+1. GTA V descarta el dispositivo tras comprobar capacidades. Por ejemplo, el feature level 11_0 está bien, pero puede que falte algo que este repack exige; el diario lo dirá.
+2. El cierre de la sesión lo provoca `wfm.exe` o el lanzador `PlayGTAV.exe`, no GTA V.
+3. Algo específico del repack (lanzador, archivos modificados).
+
+Los mensajes de GStreamer/GTK y PolygonOffset (este último viene de wined3d en el escritorio, no del juego, que usa DXVK) no tienen relación demostrada con el cierre.
+
 ## GTA V en el Dimensity 8350: falso «device lost» al esperar un fence (corrección en 1.1.1‑dev5, sin validar en el teléfono)
 
 **Informe:** «GTA V LITE V13.2 OptiJuegos». `PlayGTAV.exe` → `GTA5.exe`; DXVK 1.10.3 crea instancia y dispositivo en la Mali‑G615. Tras **solo 2 envíos a la GPU** (`submits=2 images=3 presents=0`), DXVK registra `DxvkSubmissionQueue: Failed to sync fence: VK_ERROR_DEVICE_LOST` y el juego sale con código 1. Vortek: 0 llamadas fallidas, 0 errores fatales.

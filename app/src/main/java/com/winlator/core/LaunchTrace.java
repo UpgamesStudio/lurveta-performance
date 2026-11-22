@@ -100,7 +100,8 @@ public final class LaunchTrace {
         try {
             LaunchTrace trace = new LaunchTrace(context, title, gameExe);
             trace.rotate();
-            trace.header.add("LURVETA Performance " + BuildConfig.VERSION_NAME + " (code " + BuildConfig.VERSION_CODE + ") | build " + (BuildConfig.DEBUG ? "debug" : "release"));
+            trace.header.add("LURVETA Performance " + BuildConfig.VERSION_NAME + " (code " + BuildConfig.VERSION_CODE + ") | build " + (BuildConfig.DEBUG ? "debug" : "release")
+                             + " | source " + BuildConfig.BUILD_ID + " | built " + BuildConfig.BUILD_TIME);
             trace.header.add("device: " + Build.MANUFACTURER + " " + Build.MODEL + " | Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ") | SoC " + HardwareInfo.getSocName());
             trace.header.add("cpu: " + HardwareInfo.getCpuSummary());
             try {
@@ -476,6 +477,8 @@ public final class LaunchTrace {
         catch (IOException ignored) {}
     }
 
+    private volatile String gamesAliveAtEnd = null;
+
     private boolean finish(int status) {
         exited = true;
         exitStatus = status;
@@ -487,6 +490,12 @@ public final class LaunchTrace {
         catch (Throwable ignored) {}
         synchronized (this) {
             note("guest process ended: " + LaunchAnalysis.describeExit(status));
+            List<String> alive = new ArrayList<>();
+            for (Map.Entry<Integer, String> e : lastProcesses.entrySet()) {
+                if (isGameProcess(e.getValue().toLowerCase(Locale.ROOT))) alive.add(e.getValue().split(" ")[0] + " (pid " + e.getKey() + ")");
+            }
+            gamesAliveAtEnd = alive.isEmpty() ? "none" : String.join(", ", alive);
+            if (!alive.isEmpty()) note("game process(es) STILL RUNNING when the Wine session ended: " + gamesAliveAtEnd + " -> the exit code is not the game's");
         }
         finished = true;
         if (sampler != null) sampler.interrupt();
@@ -515,6 +524,7 @@ public final class LaunchTrace {
                 if (isGameProcess(p.toLowerCase(Locale.ROOT)) && !games.contains(name)) games.add(name);
             }
             sb.append("game process(es) detected: ").append(games.isEmpty() ? "none" : String.join(", ", games)).append('\n');
+            if (gamesAliveAtEnd != null) sb.append("game process(es) still running when the session ended: ").append(gamesAliveAtEnd).append('\n');
         }
         sb.append("last stage reached: ").append(last >= 0 ? last + " — " + LaunchAnalysis.stageName(last) : "none").append('\n');
         sb.append("stages: ");
@@ -556,10 +566,81 @@ public final class LaunchTrace {
             for (String line : tail(file, 120)) sb.append(line).append('\n');
         }
 
-        sb.append("\n--- BOX64 / WINE OUTPUT (last ").append(OUTPUT_TAIL_LINES).append(" lines of ").append(outputFile.length()).append(" bytes) ---\n");
-        for (String line : tail(outputFile, OUTPUT_TAIL_LINES)) sb.append(line).append('\n');
+        // Vulkan call journal of every client (written by Vortek, one per client process).
+        File[] journals = new File(context.getFilesDir(), "logs").listFiles((d, n) -> n.startsWith("vortek-journal-") && n.endsWith(".txt"));
+        if (journals != null) {
+            Arrays.sort(journals, (a, b) -> a.getName().compareTo(b.getName()));
+            for (File journal : journals) {
+                if (journal.lastModified() / 1000 < startEpochSeconds - 1) continue;
+                String pidText = journal.getName().substring(15, journal.getName().length() - 4);
+                int pid = -1;
+                try { pid = Integer.parseInt(pidText); } catch (NumberFormatException ignored) {}
+                List<String> lines = tail(journal, JOURNAL_LINES);
+                sb.append("\n--- VULKAN CALL JOURNAL of client ").append(clientName(pid)).append(" (last ").append(lines.size()).append(" entries; consecutive identical calls merged) ---\n");
+                for (String line : lines) sb.append(line).append('\n');
+            }
+        }
+
+        OutputScan scan = scanOutput();
+        sb.append("\n--- BOX64 / WINE: IMPORTANT LINES (whole output, ").append(outputFile.length()).append(" bytes; repeated noise filtered) ---\n");
+        for (String line : scan.important) sb.append(line).append('\n');
+        if (scan.importantDropped > 0) sb.append("(").append(scan.importantDropped).append(" more important lines not shown)\n");
+        sb.append("noise filtered: ").append(scan.noise).append(" lines (\"function ... not found in lib\", wined3d PolygonOffset)\n");
+        sb.append("\n--- BOX64 / WINE OUTPUT (last ").append(scan.tail.size()).append(" lines without noise) ---\n");
+        for (String line : scan.tail) sb.append(line).append('\n');
         sb.append("=== end of report ===\n");
         return sb.toString();
+    }
+
+
+    private static final int JOURNAL_LINES = 160;
+    private static final String[] NOISE = {"not found in lib", "PolygonOffset scale factor detection failed"};
+    private static final String[] IMPORTANT = {"err:", "Unhandled", "xception", "wine: ", "rror", "fatal", "Fatal", "crash", "Crash",
+        "SIGSEGV", "SIGILL", "SIGBUS", "Assertion", "abort", "Abort", "page fault", "backtrace", "Backtrace", "killed", "Killed", "failed", "Failed"};
+
+    private static final class OutputScan {
+        final List<String> important = new ArrayList<>();
+        final java.util.ArrayDeque<String> tail = new java.util.ArrayDeque<>();
+        int importantDropped = 0;
+        int noise = 0;
+    }
+
+    /** Reads the whole Box64/Wine output once: keeps every important line (up to 250) and the tail without noise. */
+    private OutputScan scanOutput() {
+        OutputScan scan = new OutputScan();
+        if (!outputFile.isFile()) return scan;
+        try (BufferedReader reader = new BufferedReader(new FileReader(outputFile))) {
+            String line;
+            String previous = null;
+            int repeats = 0;
+            while ((line = reader.readLine()) != null) {
+                boolean noisy = false;
+                for (String n : NOISE) if (line.contains(n)) { noisy = true; break; }
+                if (noisy) { scan.noise++; continue; }
+                if (line.length() > 400) line = line.substring(0, 400) + "…";
+
+                if (line.equals(previous)) { repeats++; continue; }
+                if (repeats > 0) { addTail(scan, "  (previous line repeated " + repeats + " more times)"); repeats = 0; }
+                previous = line;
+
+                addTail(scan, line);
+                for (String k : IMPORTANT) {
+                    if (line.contains(k)) {
+                        if (scan.important.size() < 250) scan.important.add(line);
+                        else scan.importantDropped++;
+                        break;
+                    }
+                }
+            }
+            if (repeats > 0) addTail(scan, "  (previous line repeated " + repeats + " more times)");
+        }
+        catch (IOException ignored) {}
+        return scan;
+    }
+
+    private static void addTail(OutputScan scan, String line) {
+        scan.tail.addLast(line);
+        if (scan.tail.size() > OUTPUT_TAIL_LINES) scan.tail.removeFirst();
     }
 
     private File[] dxvkLogs() {

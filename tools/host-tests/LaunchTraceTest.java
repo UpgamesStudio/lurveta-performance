@@ -38,6 +38,14 @@ public class LaunchTraceTest {
             (now + " pid=88 requests=4242 submits=17 presents=100 swapchains=1 images=311 allocMB=640 state=WAITING_FOR_GAME last=vkQueuePresentKHR idleMs=0\n").getBytes());
 
         LaunchTrace.begin(new android.content.Context(), "GTA IV (simulated)", "GTAIV.exe", Arrays.asList("container: test"));
+        // Box64/Wine output with thousands of noise lines around one real error.
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < 3000; i++) out.append("[BOX64] Warning, function glVertex2hNV not found in lib libGL.so.1\n");
+        out.append("wine: Unhandled page fault on read access to 0000000000000010 at address 0000000140123456 (thread 0104)\n");
+        for (int i = 0; i < 500; i++) out.append("[BOX64] Warning, function glTextureBarrierNV not found in lib libGL.so.1\n");
+        Files.write(Paths.get(files.getPath(), "logs/launch/guest-output.log"), out.toString().getBytes());
+        Files.write(Paths.get(logs.getPath(), "vortek-journal-88.txt"), ("# Vortek call journal, client pid 88, build test\n"
+            + "+0.010s vkCreateInstance x1 -> VK_SUCCESS\n+0.500s vkCreateDevice x1 -> VK_SUCCESS\n+0.900s vkCreateSwapchainKHR x1 -> VK_ERROR_SURFACE_LOST_KHR\n").getBytes());
         Process game = new ProcessBuilder(bin + "/GTAIV.exe", "-c", "while True: pass").start();
         Process browser = new ProcessBuilder(bin + "/gta4Browser.exe", "60").start();
         Thread.sleep(3000);
@@ -58,6 +66,10 @@ public class LaunchTraceTest {
         check(report.matches("(?s).*probe GTAIV\\.exe pid \\d+: cpu (9\\d|1\\d\\d)%.*"), "busy game thread measured (~100% CPU)");
         check(report.matches("(?s).*probe gta4Browser\\.exe pid \\d+: cpu 0%.*IDLE/WAITING.*"), "sleeping helper reported idle");
         check(Arrays.stream(report.split("\n")).noneMatch(l -> l.contains("probe GTAIV.exe") && l.contains("IDLE")), "a busy process is never reported idle (first sample has no baseline)");
+        check(report.contains("VULKAN CALL JOURNAL of client 88") && report.contains("vkCreateSwapchainKHR x1 -> VK_ERROR_SURFACE_LOST_KHR"), "call journal in the report");
+        check(report.contains("IMPORTANT LINES") && report.contains("wine: Unhandled page fault"), "crash line found inside the noise");
+        check(report.contains("noise filtered: 3500 lines"), "noise counted, not shown");
+        check(report.contains("still running when the session ended: none") || report.contains("still running when the session ended: GTAIV.exe"), "alive-at-end line present");
         check(report.contains("vortek client 77") && report.contains("vortek client 88"), "each Vulkan client reported separately");
         check(report.matches("(?s).*vortek client 88[^\\n]*best window ~1[0-9][0-9]\\.\\d fps.*"), "fps estimated from presents (~120)");
         check(report.contains("failed Vulkan calls: 1"), "Vortek failure counted");
@@ -74,13 +86,14 @@ public class LaunchTraceTest {
         Thread.sleep(1500);
         Process gta5 = new ProcessBuilder(bin + "/GTA5.exe", "30").start();
         Thread.sleep(2500);
-        gta5.destroyForcibly();
-        Thread.sleep(1500);
         wfm.destroyForcibly();
-        LaunchTrace.end(0);
+        Thread.sleep(1500);
+        LaunchTrace.end(1);                 // the Wine session ends while GTA5.exe is still running
+        gta5.destroyForcibly();
         String desktop = new String(Files.readAllBytes(Paths.get(files.getPath(), "logs/launch/launch-latest.txt")));
         check(desktop.contains("game process(es) detected: GTA5.exe"), "desktop launch: GTA5.exe detected, wfm.exe ignored");
-        check(desktop.contains("4=yes") && desktop.contains("ended: GTA5.exe"), "desktop launch: game process creation and exit in the timeline");
+        check(desktop.contains("4=yes"), "desktop launch: game process creation in the timeline");
+        check(desktop.contains("STILL RUNNING when the Wine session ended: GTA5.exe"), "game alive at session end is reported");
 
         System.out.println(fails == 0 ? "ALL LAUNCH TRACE TESTS PASSED" : fails + " FAILURES");
         System.exit(fails == 0 ? 0 : 1);

@@ -208,7 +208,20 @@ static inline void vt_free(MemoryPool* memoryPool) {
     }
 }
 
+#ifdef VT_SERVER
+/* LURVETA: result of the last reply sent by the request thread (for the call journal). */
+__attribute__((weak)) __thread int vt_replyResult = 0;
+__attribute__((weak)) __thread int vt_replyCount = 0;
+static inline void vt_noteReply(int result) {
+    vt_replyResult = result;
+    vt_replyCount++;
+}
+#endif
+
 static inline int vt_send(RingBuffer* ring, int requestCode, void* data, int size) {
+#ifdef VT_SERVER
+    vt_noteReply(requestCode);
+#endif
 #ifndef VT_SERVER
     if (size >= SERVER_RING_BUFFER_SIZE) {
         const uint16_t requestId = maxClientRequestId++;

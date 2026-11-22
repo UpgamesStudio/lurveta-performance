@@ -5,6 +5,22 @@ apply plugin: 'com.android.application'
 // "/data/data/com.winlator/files/rootfs" (36 bytes); see PathRelocator.java.
 def lurvetaAppId = 'com.lurveta.co'
 
+// LURVETA: exact source identity of every build (shown in launch reports), so a test APK can
+// never be confused with another one. "-dirty" = built with uncommitted changes.
+def lurvetaBuildId = {
+    try {
+        def head = ['git', 'rev-parse', '--short=10', 'HEAD'].execute(null, rootDir)
+        head.waitFor()
+        def status = ['git', 'status', '--porcelain', '--untracked-files=no'].execute(null, rootDir)
+        status.waitFor()
+        def hash = head.text.trim()
+        return hash.isEmpty() ? 'unknown' : hash + (status.text.trim().isEmpty() ? '' : '-dirty')
+    }
+    catch (Exception e) {
+        return 'unknown'
+    }
+}()
+
 android {
     // The Java namespace stays com.winlator (internal, not user-visible); the installed
     // package is the LURVETA applicationId.
@@ -20,11 +36,13 @@ android {
 
         buildConfigField 'String', 'PRODUCT_NAME', '"LURVETA Performance"'
         buildConfigField 'String', 'UPSTREAM_BASE', '"Winlator 11.2 (winlator-app@a030f55)"'
+        buildConfigField 'String', 'BUILD_ID', "\"${lurvetaBuildId}\""
+        buildConfigField 'String', 'BUILD_TIME', "\"${new Date().format('yyyy-MM-dd HH:mm:ss', TimeZone.getTimeZone('UTC'))} UTC\""
         buildConfigField 'String', 'SOURCE_URL', '"https://github.com/UpgamesStudio/lurveta-performance"'
 
         externalNativeBuild {
             cmake {
-                arguments "-DAPP_ID=${lurvetaAppId}"
+                arguments "-DAPP_ID=${lurvetaAppId}", "-DLURVETA_BUILD_ID=${lurvetaBuildId}"
             }
         }
     }

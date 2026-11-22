@@ -348,6 +348,7 @@ void vt_handle_vkMapMemory(VkContext* context) {
     ResourceMemory* resourceMemory = VkObject_fromId(memoryId);
 
     VkResult result = resourceMemory->fd != -1 ? VK_SUCCESS : VK_ERROR_MEMORY_MAP_FAILED;
+    vt_noteReply(result);
     send_fds(context->clientFd, &resourceMemory->fd, 1, &result, sizeof(VkResult));
 }
 
@@ -604,6 +605,7 @@ void vt_handle_vkWaitForFences(VkContext* context) {
             count++;
         }
 
+        vt_noteReply(result);
         if (result == VK_SUCCESS) {
             send_fds(context->clientFd, fds, count, &result, sizeof(VkResult));
         }
@@ -2387,6 +2389,7 @@ void vt_handle_vkGetFenceFdKHR(VkContext* context) {
 
     int fd;
     VkResult result = vulkanWrapper.vkGetFenceFd(device, &getFdInfo, &fd);
+    vt_noteReply(result);
     send_fds(context->clientFd, &fd, 1, &result, sizeof(VkResult));
     CLOSEFD(fd);
 }

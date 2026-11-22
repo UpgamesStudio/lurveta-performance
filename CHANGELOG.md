@@ -20,6 +20,13 @@ Objetivo: aislar y corregir la regresión de arranque de GTA IV/GTA V. **No se d
 - **[V‑host]** la lógica del veredicto (cada punto de parada → diagnóstico correcto). **No probado en dispositivo** la captura en sí.
 - `docs/DIFERENCIAS_CON_WINLATOR_11_2.md`: comparación del camino de arranque con 11.2 (verificado: rutas reubicadas sin restos).
 
+### Diagnóstico de GTA V tras la corrección de fences
+- Diario de llamadas Vulkan por cliente con el resultado real de cada respuesta (`vortek-journal-<pid>.txt`, en el informe); el primer error real se registra como `FIRST ERROR` (sin contar consultas de capacidades).
+- El informe extrae todas las líneas de error de la salida completa de Box64/Wine y filtra el ruido repetitivo (`… not found in lib`, PolygonOffset), que ocultaba la cola.
+- El informe indica qué procesos del juego seguían vivos al terminar la sesión de Wine (el código de salida es del escritorio, no del juego).
+- Identificador de compilación (commit, `-dirty` si hay cambios sin commit, hora UTC) en BuildConfig, en la biblioteca nativa y en cada informe.
+- **[V‑host]** informe con ruido simulado (3500 líneas) y un fallo real dentro; diario incluido; juego vivo al cierre detectado. El diario nativo solo está compilado.
+
 ### Corrección: falso `VK_ERROR_DEVICE_LOST` al esperar fences (GTA V)
 - Causa: exportar un fence como SYNC_FD lo resetea (especificación de Vulkan). La siguiente espera o consulta del mismo fence fallaba, y el cliente de Vortek convierte cualquier fallo en `VK_ERROR_DEVICE_LOST`. GTA V lo registraba tras 2 envíos a la GPU, sin pérdida real del dispositivo.
 - Ahora: cada fence se exporta como mucho una vez y su sync fd se conserva como estado real; los fences ya señalados no se exportan; nunca se envían descriptores inválidos (antes, un `-1` hacía fallar `sendmsg` y el cliente quedaba colgado); los fallos restantes se registran.
