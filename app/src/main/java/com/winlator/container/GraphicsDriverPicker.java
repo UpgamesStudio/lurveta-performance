@@ -4,7 +4,6 @@ import android.content.Context;
 import android.view.View;
 import android.widget.LinearLayout;
 
-import com.winlator.contentdialog.TurnipConfigDialog;
 import com.winlator.contentdialog.VirGLConfigDialog;
 import com.winlator.contentdialog.VortekConfigDialog;
 import com.winlator.core.KeyValueSet;
@@ -58,9 +57,6 @@ public class GraphicsDriverPicker {
 
     private static void showGraphicsDriverConfigDialog(String graphicsDriver, View anchor) {
         switch (graphicsDriver) {
-            case GraphicsDrivers.TURNIP:
-                (new TurnipConfigDialog(anchor)).show();
-                break;
             case GraphicsDrivers.VORTEK:
                 (new VortekConfigDialog(anchor)).show();
                 break;

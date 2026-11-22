@@ -6,7 +6,6 @@ import androidx.annotation.Keep;
 
 import com.winlator.contentdialog.VortekConfigDialog;
 import com.winlator.core.GPUHelper;
-import com.winlator.core.GeneralComponents;
 import com.winlator.core.KeyValueSet;
 import com.winlator.renderer.GPUImage;
 import com.winlator.xconnector.ConnectedClient;
@@ -42,7 +41,7 @@ public class VortekRendererComponent extends EnvironmentComponent implements Con
         public short imageCacheSize = IMAGE_CACHE_SIZE;
         public byte resourceMemoryType = 0;
         public String[] exposedDeviceExtensions = null;
-        public String libvulkanPath = null;
+        public final String libvulkanPath = null;
 
         public static Options fromKeyValueSet(Context context, KeyValueSet config) {
             if (config == null || config.isEmpty()) return new Options();
@@ -63,8 +62,7 @@ public class VortekRendererComponent extends EnvironmentComponent implements Con
             options.imageCacheSize = (short)config.getInt("imageCacheSize", VortekRendererComponent.IMAGE_CACHE_SIZE);
             options.resourceMemoryType = (byte)config.getInt("resourceMemoryType");
 
-            String adrenotoolsDriver = config.get("adrenotoolsDriver");
-            options.libvulkanPath = GeneralComponents.getDefinitivePath(GeneralComponents.Type.ADRENOTOOLS_DRIVER, context, adrenotoolsDriver);
+            // LURVETA: always the system Vulkan driver (adrenotools custom drivers removed).
             return options;
         }
     }

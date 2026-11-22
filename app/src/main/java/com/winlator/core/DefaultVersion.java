@@ -6,7 +6,6 @@ import java.util.Locale;
 
 public abstract class DefaultVersion {
     public static final String BOX64 = "0.4.4";
-    public static final String TURNIP = "26.2.0";
     public static final String VORTEK = "2.1";
     public static final String ZINK = "22.2.5";
     public static final String VIRGL = "23.1.9";
@@ -27,13 +26,12 @@ public abstract class DefaultVersion {
     public static String DXVK(String vulkanDriver) {
         int vkApiVersion = 0;
         if (vulkanDriver != null && vulkanDriver.equals(GraphicsDrivers.VORTEK)) vkApiVersion = GPUHelper.vkGetApiVersion();
-        return vulkanDriver == null || vulkanDriver.equals(GraphicsDrivers.TURNIP) || vkApiVersion >= GPUHelper.vkMakeVersion(1, 3, 0) ? MAJOR_DXVK : MINOR_DXVK;
+        return vulkanDriver == null || vkApiVersion >= GPUHelper.vkMakeVersion(1, 3, 0) ? MAJOR_DXVK : MINOR_DXVK;
     }
 
     public static String valueOf(String name) {
         switch (name.toUpperCase(Locale.ENGLISH)) {
             case "BOX64": return BOX64;
-            case "TURNIP": return TURNIP;
             case "VORTEK": return VORTEK;
             case "ZINK": return ZINK;
             case "VIRGL": return VIRGL;

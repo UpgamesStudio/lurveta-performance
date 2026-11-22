@@ -40,7 +40,6 @@ import com.winlator.contentdialog.ContentDialog;
 import com.winlator.contentdialog.DXVKConfigDialog;
 import com.winlator.contentdialog.DebugDialog;
 import com.winlator.contentdialog.ScreenEffectDialog;
-import com.winlator.contentdialog.TurnipConfigDialog;
 import com.winlator.contentdialog.VKD3DConfigDialog;
 import com.winlator.contentdialog.VirGLConfigDialog;
 import com.winlator.contentdialog.WineD3DConfigDialog;
@@ -718,11 +717,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     private void extractGraphicsDriverFiles() {
         envVars.put("vblank_mode", "0");
 
-        String cacheId = "";
-        if (graphicsDriver[0].equals(GraphicsDrivers.TURNIP)) {
-            cacheId += graphicsDriver[0]+"-"+graphicsDriverConfig[0].get("version", DefaultVersion.TURNIP);
-        }
-        else cacheId += graphicsDriver[0]+"-"+DefaultVersion.valueOf(graphicsDriver[0]);
+        String cacheId = graphicsDriver[0]+"-"+DefaultVersion.valueOf(graphicsDriver[0]);
         cacheId += "-"+graphicsDriver[1]+"-"+DefaultVersion.valueOf(graphicsDriver[1]);
 
         String currentGraphicsDriver = preferences.getString("current_graphics_driver", "");
@@ -742,15 +737,8 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             preferences.edit().putString("current_graphics_driver", cacheId).apply();
         }
 
-        if (graphicsDriver[0].equals(GraphicsDrivers.TURNIP)) {
-            TurnipConfigDialog.setEnvVars(this, graphicsDriverConfig[0], envVars);
-
-            if (changed) {
-                String version = graphicsDriverConfig[0].get("version", DefaultVersion.TURNIP);
-                GeneralComponents.extractFile(GeneralComponents.Type.TURNIP, this, version, DefaultVersion.TURNIP);
-            }
-        }
-        else if (graphicsDriver[0].equals(GraphicsDrivers.VORTEK) && (changed || MainActivity.DEBUG_MODE)) {
+        // LURVETA: Turnip (Adreno-only) was removed; Vortek is the only Vulkan driver.
+        if (graphicsDriver[0].equals(GraphicsDrivers.VORTEK) && (changed || MainActivity.DEBUG_MODE)) {
             TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, this, "graphics_driver/vortek-" + DefaultVersion.VORTEK + ".tzst", rootDir);
         }
 
