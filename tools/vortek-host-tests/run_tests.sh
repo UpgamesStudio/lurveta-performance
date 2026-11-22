@@ -10,6 +10,9 @@ OUT=${1:-$HERE/build}
 echo; echo "### BC decoder vs. independent reference (Pillow)"
 python3 -I "$HERE/test_bc_reference.py" "$OUT/bc_decode_cli" "$OUT/bc-ref"
 
+echo; echo "### Tiny mip sizes (1x1..7x7) under AddressSanitizer"
+ASAN_OPTIONS=detect_leaks=0 python3 -I "$HERE/test_bc_small.py" "$OUT/bc_decode_cli" "$OUT/bc-small"
+
 echo; echo "### Texture decoder on lavapipe + validation + synchronization validation"
 ICD=/usr/share/vulkan/icd.d/lvp_icd.json
 [ -f "$ICD" ] && export VK_ICD_FILENAMES="$ICD"

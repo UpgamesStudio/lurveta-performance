@@ -2,6 +2,7 @@
 #include "vk_context.h"
 #include "vulkan_helper.h"
 #include "sysvshared_memory.h"
+extern DeviceMemoryInfo deviceMemoryInfo;
 
 #define MSG_DEBUG_UNIMPLEMENTED_FUNC "%s not implemented yet\n"
 
@@ -166,6 +167,7 @@ void vt_handle_vkCreateDevice(VkContext* context) {
 
     VkDevice device;
     VkResult result = vulkanWrapper.vkCreateDevice(physicalDevice, &createInfo, NULL, &device);
+    if (result != VK_SUCCESS) VkContext_logFailure(context, "vkCreateDevice", result, "exposed extensions %u", createInfo.enabledExtensionCount);
     if (result == VK_SUCCESS) initVulkanDevice(context, physicalDevice, device);
 
     VT_SERIALIZE_CMD(VkDevice, device);
@@ -309,8 +311,15 @@ void vt_handle_vkAllocateMemory(VkContext* context) {
     vt_unserialize_vkAllocateMemory((VkDevice)&deviceId, &allocateInfo, NULL, NULL, context->inputBuffer, &context->memoryPool);
     VkDevice device = VkObject_fromId(deviceId);
 
+    VkDeviceSize requestedSize = allocateInfo.allocationSize;
+    uint32_t requestedType = allocateInfo.memoryTypeIndex;
     ResourceMemory* resourceMemory = ResourceMemory_allocate(context, device, &allocateInfo);
     VkResult result = resourceMemory ? VK_SUCCESS : VK_ERROR_OUT_OF_DEVICE_MEMORY;
+    if (!resourceMemory) {
+        VkContext_logFailure(context, "vkAllocateMemory", result, "requested %llu MB (type %u), already allocated %llu MB, cap %llu MB",
+                             (unsigned long long)(requestedSize >> 20), requestedType, (unsigned long long)(context->totalAllocationSize >> 20),
+                             (unsigned long long)(((uint64_t)context->maxDeviceMemory ? ((uint64_t)context->maxDeviceMemory << 20) : deviceMemoryInfo.maxAllocationSize) >> 20));
+    }
 
     if (result == VK_SUCCESS) {
         VT_SERIALIZE_CMD(VkDeviceMemory, (VkDeviceMemory)resourceMemory);
@@ -749,6 +758,7 @@ void vt_handle_vkCreateBuffer(VkContext* context) {
 
     VkBuffer buffer;
     VkResult result = vulkanWrapper.vkCreateBuffer(device, &createInfo, NULL, &buffer);
+    if (result != VK_SUCCESS) VkContext_logFailure(context, "vkCreateBuffer", result, "size %llu usage 0x%x flags 0x%x", (unsigned long long)createInfo.size, createInfo.usage, createInfo.flags);
 
     VT_SERIALIZE_CMD(VkBuffer, buffer);
     vt_send(context->clientRing, result, outputBuffer, bufferSize);
@@ -775,6 +785,7 @@ void vt_handle_vkCreateBufferView(VkContext* context) {
 
     VkBufferView view;
     VkResult result = vulkanWrapper.vkCreateBufferView(device, &createInfo, NULL, &view);
+    if (result != VK_SUCCESS) VkContext_logFailure(context, "vkCreateBufferView", result, "format %d", createInfo.format);
 
     VT_SERIALIZE_CMD(VkBufferView, view);
     vt_send(context->clientRing, result, outputBuffer, bufferSize);
@@ -801,10 +812,15 @@ void vt_handle_vkCreateImage(VkContext* context) {
     VkImage image;
     VkResult result;
     if (context->textureDecoder && context->textureDecoder->device == device && TextureDecoder_isFormatSupported(context->textureDecoder, createInfo.format)) {
+        VkFormat originalFormat = createInfo.format;
         result = TextureDecoder_createImage(context->textureDecoder, &createInfo, &image);
         if (result == VK_SUCCESS) RingBuffer_setStatus(context->clientRing, RING_STATUS_WAIT);
+        else VkContext_logFailure(context, "vkCreateImage(decoded BC)", result, "format %d %ux%u mips %u layers %u", originalFormat, createInfo.extent.width, createInfo.extent.height, createInfo.mipLevels, createInfo.arrayLayers);
     }
-    else result = vulkanWrapper.vkCreateImage(device, &createInfo, NULL, &image);
+    else {
+        result = vulkanWrapper.vkCreateImage(device, &createInfo, NULL, &image);
+        if (result != VK_SUCCESS) VkContext_logFailure(context, "vkCreateImage", result, "format %d %ux%u mips %u layers %u usage 0x%x flags 0x%x", createInfo.format, createInfo.extent.width, createInfo.extent.height, createInfo.mipLevels, createInfo.arrayLayers, createInfo.usage, createInfo.flags);
+    }
 
     VT_SERIALIZE_CMD(VkImage, image);
     vt_send(context->clientRing, result, outputBuffer, bufferSize);
@@ -854,6 +870,7 @@ void vt_handle_vkCreateImageView(VkContext* context) {
 
     VkImageView view;
     VkResult result = vulkanWrapper.vkCreateImageView(device, &createInfo, NULL, &view);
+    if (result != VK_SUCCESS) VkContext_logFailure(context, "vkCreateImageView", result, "format %d type %d", createInfo.format, createInfo.viewType);
 
     VT_SERIALIZE_CMD(VkImageView, view);
     vt_send(context->clientRing, result, outputBuffer, bufferSize);
@@ -1012,6 +1029,7 @@ void vt_handle_vkCreateSampler(VkContext* context) {
 
     VkSampler sampler;
     VkResult result = vulkanWrapper.vkCreateSampler(device, &createInfo, NULL, &sampler);
+    if (result != VK_SUCCESS) VkContext_logFailure(context, "vkCreateSampler", result, "anisotropy %d", (int)createInfo.anisotropyEnable);
 
     VT_SERIALIZE_CMD(VkSampler, sampler);
     vt_send(context->clientRing, result, outputBuffer, bufferSize);
@@ -1147,6 +1165,7 @@ void vt_handle_vkCreateFramebuffer(VkContext* context) {
 
     VkFramebuffer framebuffer;
     VkResult result = vulkanWrapper.vkCreateFramebuffer(device, &createInfo, NULL, &framebuffer);
+    if (result != VK_SUCCESS) VkContext_logFailure(context, "vkCreateFramebuffer", result, "%ux%u layers %u", createInfo.width, createInfo.height, createInfo.layers);
 
     VT_SERIALIZE_CMD(VkFramebuffer, framebuffer);
     vt_send(context->clientRing, result, outputBuffer, bufferSize);

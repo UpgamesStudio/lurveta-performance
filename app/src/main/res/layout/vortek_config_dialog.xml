@@ -79,5 +79,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/persistent_pipeline_cache" />
+
+        <CheckBox
+            android:id="@+id/CBBcHighFormats"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/bc_high_formats" />
     </LinearLayout>
 </ScrollView>

@@ -158,6 +158,10 @@ extern void TextureDecoder_destroyImage(TextureDecoder* textureDecoder, VkImage 
 extern void TextureDecoder_addBoundBuffer(TextureDecoder* textureDecoder, ResourceMemory* memory, VkBuffer buffer, VkDeviceSize memoryOffset);
 extern void TextureDecoder_removeBoundBuffer(TextureDecoder* textureDecoder, VkBuffer buffer);
 
+/* LURVETA: BC6H/BC7 emulation (new in 1.1.0). When disabled those two formats are not advertised nor
+ * created, exactly as in 1.0.0 (Vortek setting "bcHighFormats"; used to isolate regressions). */
+extern void TextureDecoder_setHighBCEnabled(bool enabled);
+
 /* True when the decoder handles this format (a BC format the device cannot sample natively). */
 extern bool TextureDecoder_isFormatSupported(TextureDecoder* textureDecoder, VkFormat format);
 /* True for every BC1-BC7 format (formats this decoder is able to decode). */

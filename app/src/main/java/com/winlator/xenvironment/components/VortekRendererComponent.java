@@ -49,6 +49,8 @@ public class VortekRendererComponent extends EnvironmentComponent implements Con
         public int textureUploadMode = 0;
         // LURVETA: persistent VkPipelineCache when the game passes none (DXVK, wined3d).
         public boolean persistentPipelineCache = true;
+        // LURVETA: emulate BC6H/BC7 (1.1.0). Off = behaviour of 1.0.0, for regression isolation.
+        public boolean bcHighFormats = true;
 
         public static Options fromKeyValueSet(Context context, KeyValueSet config) {
             if (config == null || config.isEmpty()) return new Options();
@@ -71,6 +73,7 @@ public class VortekRendererComponent extends EnvironmentComponent implements Con
             options.performanceHints = config.getBoolean("performanceHints", true);
             options.textureUploadMode = config.getInt("textureUploadMode", 0);
             options.persistentPipelineCache = config.getBoolean("pipelineCache", true);
+            options.bcHighFormats = config.getBoolean("bcHighFormats", true);
 
             // LURVETA: always the system Vulkan driver (adrenotools custom drivers removed).
             return options;

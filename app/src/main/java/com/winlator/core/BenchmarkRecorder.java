@@ -217,6 +217,8 @@ public final class BenchmarkRecorder {
             failureReason = "Vortek fatal error: " + vortekErrors.get(0);
         }
         appendEvents(vortekErrors, startEpochSeconds);
+        List<String> vulkanFailures = readLines("logs/vortek-diagnostics.log", startEpochSeconds, " FAIL ");
+        appendEvents(vulkanFailures, startEpochSeconds, "vulkan_call_failed");
 
         StringBuilder stability = new StringBuilder();
         stability.append(String.format(Locale.ENGLISH, "hitches (>%.0f ms): %d | stalls (>%.0f ms): %d | freezes (no frame >= %d s): %d | longest frame gap: %.0f ms\n",
@@ -225,6 +227,9 @@ public final class BenchmarkRecorder {
             ? String.format(Locale.ENGLISH, "time_to_failure_s: %.1f (%s)\n", failureSeconds, failureReason)
             : "time_to_failure_s: none (no freeze >= " + (FAILURE_NANOS / 1_000_000_000L) + " s and no Vortek fatal error during the recording)\n");
         if (!vortekErrors.isEmpty()) stability.append("vortek_fatal_errors: ").append(vortekErrors.size()).append(" (see events.csv)\n");
+        stability.append("vulkan_call_failures: ").append(vulkanFailures.size());
+        if (!vulkanFailures.isEmpty()) stability.append(" | first: ").append(vulkanFailures.get(0));
+        stability.append(" (files/logs/vortek-diagnostics.log; a call that failed, not necessarily fatal)\n");
         stability.append(String.format(Locale.ENGLISH, "process cpu avg: %.0f %% of one core | peak rss: %d MB (app + Wine + Box64 processes)\n",
             procSamples > 0 ? procCpuSum / procSamples : 0, peakRssMb));
         stability.append("peak temperatures: cpu ").append(fmt(peakCpuTemp)).append(" | gpu ").append(fmt(peakGpuTemp)).append(" | battery ").append(fmt(peakBatteryTemp)).append(" (C)\n");
@@ -241,13 +246,18 @@ public final class BenchmarkRecorder {
 
     /** Lines of files/logs/vortek-errors.log written during this session ("<epoch> <error> ..."). */
     private List<String> readVortekErrors(long startEpochSeconds) {
+        return readLines("logs/vortek-errors.log", startEpochSeconds, "");
+    }
+
+    /** Lines of a log under files/ written during this session whose text contains `contains`. */
+    private List<String> readLines(String relativePath, long startEpochSeconds, String contains) {
         List<String> result = new ArrayList<>();
-        File log = new File(context.getFilesDir(), "logs/vortek-errors.log");
+        File log = new File(context.getFilesDir(), relativePath);
         if (!log.isFile()) return result;
         try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(log))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (parseEpoch(line) >= startEpochSeconds) result.add(line.trim());
+                if (parseEpoch(line) >= startEpochSeconds && line.contains(contains)) result.add(line.trim());
             }
         }
         catch (IOException e) {
@@ -267,10 +277,14 @@ public final class BenchmarkRecorder {
     }
 
     private void appendEvents(List<String> vortekErrors, long startEpochSeconds) {
+        appendEvents(vortekErrors, startEpochSeconds, "vortek_fatal");
+    }
+
+    private void appendEvents(List<String> vortekErrors, long startEpochSeconds, String eventName) {
         if (vortekErrors.isEmpty()) return;
         try (BufferedWriter events = new BufferedWriter(new FileWriter(new File(outputDir, "events.csv"), true))) {
             for (String line : vortekErrors) {
-                events.write(String.format(Locale.ENGLISH, "%d,vortek_fatal,,%s\n", (parseEpoch(line) - startEpochSeconds) * 1000, line.replace(',', ';')));
+                events.write(String.format(Locale.ENGLISH, "%d,%s,,%s\n", (parseEpoch(line) - startEpochSeconds) * 1000, eventName, line.replace(',', ';')));
             }
         }
         catch (IOException e) {

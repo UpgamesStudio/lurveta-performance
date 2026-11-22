@@ -10,6 +10,7 @@ typedef struct PipelineCreateRequest {
     void* pipelineInfos;
     ShaderInspector* shaderInspector;
     PersistentPipelineCache* persistentCache; // LURVETA: set when the app passed no cache
+    VkContext* context;
     MemoryPool memoryPool;
     int notifyFd;
 } PipelineCreateRequest;
@@ -38,6 +39,10 @@ static void pipelineCreateThread(void* param) {
         result = vulkanWrapper.vkCreateComputePipelines(pipelineCreateRequest->device, pipelineCreateRequest->pipelineCache, pipelineCreateRequest->pipelineCount, createInfos, NULL, pipelines);
     }
 
+    if (result != VK_SUCCESS) {
+        VkContext_logFailure(pipelineCreateRequest->context, pipelineCreateRequest->type == PIPELINE_TYPE_GRAPHICS ? "vkCreateGraphicsPipelines" : "vkCreateComputePipelines",
+                             result, "%u pipeline(s), cache %s", pipelineCreateRequest->pipelineCount, pipelineCreateRequest->persistentCache ? "persistent" : "app/none");
+    }
     if (result == VK_SUCCESS && pipelineCreateRequest->persistentCache) {
         PersistentPipelineCache_onPipelinesCreated(pipelineCreateRequest->persistentCache, pipelineCreateRequest->pipelineCount);
     }
@@ -63,6 +68,7 @@ void AsyncPipelineCreator_create(VkContext* context, PipelineType type) {
     PipelineCreateRequest* pipelineCreateRequest = calloc(1, sizeof(PipelineCreateRequest));
     pipelineCreateRequest->type = type;
     pipelineCreateRequest->shaderInspector = context->shaderInspector;
+    pipelineCreateRequest->context = context;
 
     uint64_t deviceId = 0;
     uint64_t pipelineCacheId = 0;

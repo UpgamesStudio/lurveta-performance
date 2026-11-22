@@ -586,6 +586,14 @@ int main(int argc, char** argv) {
     Env env = {0};
     createEnv(&env, validation);
 
+    /* The regression-isolation switch: BC6H/BC7 off = 1.0.0 behaviour, BC1-5 unaffected. */
+    TextureDecoder_setHighBCEnabled(false);
+    int switchFailures = TextureDecoder_canDecodeFormat(VK_FORMAT_BC7_UNORM_BLOCK) || TextureDecoder_canDecodeFormat(VK_FORMAT_BC6H_UFLOAT_BLOCK) ||
+                         !TextureDecoder_canDecodeFormat(VK_FORMAT_BC1_RGBA_UNORM_BLOCK) || !TextureDecoder_canDecodeFormat(VK_FORMAT_BC5_UNORM_BLOCK);
+    TextureDecoder_setHighBCEnabled(true);
+    switchFailures += !TextureDecoder_canDecodeFormat(VK_FORMAT_BC7_SRGB_BLOCK);
+    printf("BC6H/BC7 switch: %s\n", switchFailures ? "FAILED" : "ok");
+
     ModeResult results[4];
     for (int mode = 0; mode < 4; mode++) results[mode] = runMode(&env, mode);
 
@@ -597,5 +605,5 @@ int main(int argc, char** argv) {
 
     destroyEnv(&env);
     /* The default (inline) mode must be fully correct and clean; legacy modes are reported, not gated. */
-    return results[TEXTURE_UPLOAD_MODE_INLINE].failures == 0 && results[TEXTURE_UPLOAD_MODE_INLINE].validationErrors == 0 ? 0 : 1;
+    return !switchFailures && results[TEXTURE_UPLOAD_MODE_INLINE].failures == 0 && results[TEXTURE_UPLOAD_MODE_INLINE].validationErrors == 0 ? 0 : 1;
 }

@@ -29,6 +29,7 @@ public class VortekConfigDialog extends ContentDialog {
         final android.widget.CheckBox cbPerformanceHints = findViewById(R.id.CBPerformanceHints);
         final Spinner sTextureUploadMode = findViewById(R.id.STextureUploadMode);
         final android.widget.CheckBox cbPipelineCache = findViewById(R.id.CBPipelineCache);
+        final android.widget.CheckBox cbBcHigh = findViewById(R.id.CBBcHighFormats);
 
         final String[] deviceExtensions = GPUHelper.vkGetDeviceExtensions();
         mscbExposedExtensions.setPopupWindowWidth(360);
@@ -54,6 +55,7 @@ public class VortekConfigDialog extends ContentDialog {
         sResourceMemoryType.setSelection(config.getInt("resourceMemoryType"));
         cbPerformanceHints.setChecked(config.getBoolean("performanceHints", true));
         cbPipelineCache.setChecked(config.getBoolean("pipelineCache", true));
+        cbBcHigh.setChecked(config.getBoolean("bcHighFormats", true));
         int textureUploadMode = config.getInt("textureUploadMode", 0);
         sTextureUploadMode.setSelection(textureUploadMode >= 0 && textureUploadMode < sTextureUploadMode.getCount() ? textureUploadMode : 0);
 
@@ -66,6 +68,7 @@ public class VortekConfigDialog extends ContentDialog {
             newConfig.put("performanceHints", cbPerformanceHints.isChecked() ? "1" : "0");
             newConfig.put("textureUploadMode", sTextureUploadMode.getSelectedItemPosition());
             newConfig.put("pipelineCache", cbPipelineCache.isChecked() ? "1" : "0");
+            newConfig.put("bcHighFormats", cbBcHigh.isChecked() ? "1" : "0");
 
             String[] selectedItems = mscbExposedExtensions.getSelectedItems();
             if (selectedItems.length > 0) {

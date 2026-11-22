@@ -364,6 +364,7 @@
     <string name="benchmark_failed">Unable to create the benchmark folder</string>
     <string name="performance_hints">Performance hints (thread priority + Android ADPF)</string>
     <string name="texture_upload_mode">BC texture uploads (GPUs without BC support)</string>
+    <string name="bc_high_formats">Emulate BC6H / BC7 textures (disable to isolate problems)</string>
     <string name="persistent_pipeline_cache">Persistent pipeline cache (less shader stutter on later runs)</string>
     <string name="lurveta_profile">LURVETA profile</string>
     <string name="profile_custom">Custom (keep current settings)</string>

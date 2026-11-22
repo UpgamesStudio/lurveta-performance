@@ -141,6 +141,15 @@ void initVulkanDevice(VkContext* context, VkPhysicalDevice physicalDevice, VkDev
     // released in vkDestroyDevice; another device created meanwhile is not routed through it.
     if (!context->textureDecoder) context->textureDecoder = TextureDecoder_create(context, physicalDevice, device, &supportedFeatures);
     if (!context->shaderInspector) context->shaderInspector = ShaderInspector_create(context, physicalDevice, &supportedFeatures);
+    {
+        VkPhysicalDeviceProperties deviceProps = {0};
+        vulkanWrapper.vkGetPhysicalDeviceProperties(physicalDevice, &deviceProps);
+        uint64_t capMb = ((uint64_t)context->maxDeviceMemory ? (uint64_t)context->maxDeviceMemory : (deviceMemoryInfo.maxAllocationSize >> 20));
+        VkContext_logInfo(context, "device '%s' vendor 0x%x driverID %d driverVersion 0x%x | native BC=%d | decoder=%s uploadMode=%d | pipelineCache=%d | engine=%s | alloc cap %llu MB (maxDeviceMemory option %d MB)",
+                          deviceProps.deviceName, deviceProps.vendorID, (int)context->driverID, deviceProps.driverVersion, (int)supportedFeatures.textureCompressionBC,
+                          context->textureDecoder ? "active" : "off", context->textureUploadMode, (int)context->persistentPipelineCache,
+                          context->engineName ? context->engineName : "-", (unsigned long long)capMb, (int)context->maxDeviceMemory);
+    }
     if (!context->pipelineCache && context->persistentPipelineCache) context->pipelineCache = PersistentPipelineCache_create(physicalDevice, device);
 }
 
@@ -384,7 +393,6 @@ VkExtensionProperties* getExposedDeviceExtensionProperties(VkContext* context, V
 #define EMULATED_BC_FORMAT_FEATURES (VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT | \
     VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT | VK_FORMAT_FEATURE_BLIT_SRC_BIT | \
     VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT)
-#define EMULATED_BC_IMAGE_USAGE (VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
 
 void checkFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format, VkFormatProperties* formatProperties) {
     if (TextureDecoder_canDecodeFormat(format) && formatProperties->linearTilingFeatures == 0 && formatProperties->optimalTilingFeatures == 0) {
@@ -407,9 +415,8 @@ void checkImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format
     }
 
     if (*result == VK_ERROR_FORMAT_NOT_SUPPORTED && TextureDecoder_canDecodeFormat(format)) {
-        // The decoder writes optimal-tiled decoded images through transfer copies only.
-        if (tiling != VK_IMAGE_TILING_OPTIMAL || (usage & ~EMULATED_BC_IMAGE_USAGE)) return;
-
+        // Not stricter than before: the driver answers for the decoded format with the requested
+        // tiling and usage (the decoded image is created with exactly those).
         VkImageCreateFlags decodedFlags = flags & ~(VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT);
         VkImageFormatProperties decodedProperties = {0};
         VkResult decodedResult = vulkanWrapper.vkGetPhysicalDeviceImageFormatProperties(physicalDevice, TextureDecoder_getDecompressedFormat(format), type, tiling, usage, decodedFlags, &decodedProperties);

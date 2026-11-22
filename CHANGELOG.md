@@ -5,6 +5,27 @@ Base: Winlator 11.2 (`winlator-app@a030f55`, tag `upstream-winlator-11.2`). Cada
 - **[V‑apk]**: comprobado en el APK compilado (aapt/strings).
 - **[Disp.]**: requiere medición en el dispositivo.
 
+## 1.1.1 — en preparación (NO publicada; rama de trabajo, sin pruebas en dispositivo)
+
+Objetivo: aislar y corregir la regresión de arranque de GTA IV/GTA V. **No se declara compatibilidad de ningún juego**; ver `docs/COMPATIBILIDAD_GTA.md`.
+
+### Correcciones
+- El cierre normal de una sesión ya no registra un «FATAL» falso en `vortek-errors.log` (y el benchmark deja de contarlo como fallo). **[V‑código]**
+- `vkGetPhysicalDeviceImageFormatProperties` para BC vuelve a no ser más estricto que 1.0.0: responde el driver con el formato descomprimido. **[V‑código]**
+
+### Diagnóstico (nuevo)
+- `files/logs/vortek-diagnostics.log`: resumen del dispositivo al arrancar y una línea por cada llamada Vulkan que falla (memoria con tamaños y tope, imágenes, buffers, vistas, pipelines…). Límite de 200 líneas por sesión; sin coste si todo va bien. El benchmark cuenta estos fallos (`vulkan_call_failures`, `events.csv`).
+- Interruptor Vortek › **Emular BC6H/BC7** (por defecto activado): desactivado reproduce el comportamiento de 1.0.0. Junto con el modo de subida BC y la caché de pipelines, permite aislar la regresión sin cambiar de APK (`docs/PRUEBAS_GTA.md`).
+
+### Pruebas
+- 396 casos de mips de 1×1 a 7×7 de los 11 formatos BC bajo AddressSanitizer: sin errores. **[V‑host]**
+
+### Investigado y descartado
+- `-DNDEBUG` del build release: solo afecta a `virglrenderer`, no a Vortek.
+
+### Pendiente (requiere el teléfono)
+Causa real del fallo de arranque; límite de memoria con texturas BC descomprimidas en GTA V; rendimiento de ambos juegos.
+
 ## 1.1.0 — rediseño visual + Vortek (release)
 
 Incluye el rediseño visual (solo presentación, ver `docs/REDISENO_UI.md`) y las mejoras técnicas siguientes.

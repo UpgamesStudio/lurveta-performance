@@ -67,7 +67,7 @@ static const char* resultToString(VkResult result) {
 }
 
 void VkContext_reportError(VkContext* context, const char* where, VkResult result) {
-    if (result >= 0) return;
+    if (result >= 0 || context->shuttingDown) return;
     context->status = result;
     if (context->errorReported) return;
     context->errorReported = true;
@@ -87,6 +87,45 @@ void VkContext_reportError(VkContext* context, const char* where, VkResult resul
     // The client reads replies from clientRing: with EXIT set its wait returns VK_ERROR_DEVICE_LOST.
     if (context->clientRing) RingBuffer_setStatus(context->clientRing, RING_STATUS_EXIT);
     if (context->serverRing) RingBuffer_setStatus(context->serverRing, RING_STATUS_EXIT);
+}
+
+#define VORTEK_DIAG_LOG VORTEK_ERROR_LOG_DIR "/vortek-diagnostics.log"
+#define VORTEK_DIAG_MAX_LINES 200
+
+static void diagWrite(VkContext* context, const char* kind, const char* call, VkResult result, const char* fmt, va_list args) {
+    if (context->diagLines >= VORTEK_DIAG_MAX_LINES) return;
+    context->diagLines++;
+
+    char detail[400];
+    vsnprintf(detail, sizeof(detail), fmt, args);
+    char line[600];
+    if (call) snprintf(line, sizeof(line), "%s %s -> %s (%d) %s", kind, call, resultToString(result), result, detail);
+    else snprintf(line, sizeof(line), "%s %s", kind, detail);
+
+    println("vortek-diag: %s", line);
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    mkdir(VORTEK_ERROR_LOG_DIR, 0771);
+    FILE* file = fopen(VORTEK_DIAG_LOG, "a");
+    if (file) {
+        fprintf(file, "%lld %s\n", (long long)ts.tv_sec, line);
+        fclose(file);
+    }
+    if (context->diagLines == VORTEK_DIAG_MAX_LINES) println("vortek-diag: line limit reached, further diagnostics of this session are dropped");
+}
+
+void VkContext_logFailure(VkContext* context, const char* call, VkResult result, const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    diagWrite(context, "FAIL", call, result, fmt, args);
+    va_end(args);
+}
+
+void VkContext_logInfo(VkContext* context, const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    diagWrite(context, "INFO", NULL, VK_SUCCESS, fmt, args);
+    va_end(args);
 }
 
 static void* requestHandlerThread(void* param) {
@@ -142,7 +181,8 @@ static void* requestHandlerThread(void* param) {
 
     // Leaving the loop for any reason other than a normal shutdown must never leave the client
     // blocked on a reply that will not come.
-    if (context->status < 0) VkContext_reportError(context, "request loop", context->status);
+    if (context->shuttingDown) println("vortek: request loop stopped (session closed)");
+    else if (context->status < 0) VkContext_reportError(context, "request loop", context->status);
     else if (!RingBuffer_hasStatus(context->serverRing, RING_STATUS_EXIT)) {
         println("vortek: request loop ended (connection closed)");
         RingBuffer_setStatus(context->clientRing, RING_STATUS_EXIT);
@@ -187,6 +227,7 @@ VkContext* createVkContext(JNIEnv* env, jobject obj, int clientFd, jobject optio
     context->performanceHints = getJFieldByName(env, options, "performanceHints", "Z").z;
     context->textureUploadMode = getJFieldByName(env, options, "textureUploadMode", "I").i;
     context->persistentPipelineCache = getJFieldByName(env, options, "persistentPipelineCache", "Z").z;
+    TextureDecoder_setHighBCEnabled(getJFieldByName(env, options, "bcHighFormats", "Z").z);
     int targetFrameRate = getJFieldByName(env, options, "targetFrameRate", "I").i;
     context->targetWorkDurationNanos = 1000000000ll / (targetFrameRate > 0 ? targetFrameRate : 60);
     context->exposedDeviceExtensions = jstringArrayToCharArray(env, exposedDeviceExtensions);
@@ -209,6 +250,7 @@ VkContext* createVkContext(JNIEnv* env, jobject obj, int clientFd, jobject optio
 }
 
 void destroyVkContext(JNIEnv* env, VkContext* context) {
+    context->shuttingDown = true;
     context->status = VK_ERROR_DEVICE_LOST;
 
     if (context->requestHandlerThread) {
