@@ -1,0 +1,9 @@
+#version 450
+layout(local_size_x = 64) in;
+layout(constant_id = 0) const uint VARIANT = 0;
+shared uint scratch[64];
+void main() {
+    uint v = gl_LocalInvocationID.x * (VARIANT + 1u);
+    for (uint i = 0u; i < 4u + VARIANT % 7u; i++) v = v * 1664525u + 1013904223u;
+    scratch[gl_LocalInvocationID.x] = v;
+}

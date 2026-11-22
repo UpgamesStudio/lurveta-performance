@@ -1,0 +1,4 @@
+#ifndef HOST_STUB_ANDROID_HARDWARE_BUFFER_H
+#define HOST_STUB_ANDROID_HARDWARE_BUFFER_H
+typedef struct AHardwareBuffer AHardwareBuffer;
+#endif

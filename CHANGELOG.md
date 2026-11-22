@@ -5,6 +5,36 @@ Base: Winlator 11.2 (`winlator-app@a030f55`, tag `upstream-winlator-11.2`). Cada
 - **[V‑apk]**: comprobado en el APK compilado (aapt/strings).
 - **[Disp.]**: requiere medición en el dispositivo.
 
+## 1.1.0 (en desarrollo, rama técnica)
+
+### Subidas de texturas BC (corrige P1b)
+- **Modo "en línea" (nuevo, por defecto):** la copia decodificada se graba **dentro del command buffer del juego**, en la posición exacta de su `vkCmdCopyBufferToImage`, leyendo de un staging propio de ese command buffer. Se decodifica al enviarlo y el staging se recicla cuando el juego lo reinicia o libera. Las barreras, transiciones de layout y el orden del juego se aplican tal cual: no hay copias adelantadas, no hay escrituras concurrentes sobre la misma imagen y la CPU nunca espera a la GPU. **[V‑host]** en lavapipe con validación y validación de sincronización: 0 errores, 0 envíos extra, 0 esperas; reenviar un command buffer con datos nuevos, command buffers secundarios, mips y tamaños impares, 200 fotogramas con reinicio de pool (staging máximo 4 MB). Rendimiento: **[Disp.]**
+- Modos anteriores conservados para comparar (Vortek › *Subidas de texturas BC*): *Por lotes + barreras*, *Por lotes (LURVETA 1.0)* y *Síncrono (Winlator 11.2)*. **[V‑host]**: los tres muestran errores de layout (la copia se adelanta a la transición del juego) y no vuelven a subir la textura al reenviar un command buffer; *Por lotes* además produce `SYNC-HAZARD-WRITE-AFTER-WRITE`, y *Síncrono* hace una espera bloqueante por región (211 en la prueba).
+- El cliente recibe ahora el **resultado real** de `vkQueueSubmit` (antes se respondía `VK_SUCCESS` antes de enviar). Si falla la subida de texturas por un error que no sea pérdida del dispositivo, el trabajo del juego se envía igualmente.
+- Decodificación en un pool de hilos propio, que espera solo sus tareas (antes esperaba también a las compilaciones de pipelines en curso). Escrituras de la caché de texturas en un hilo aparte (antes bloqueaban el submit del juego). **[V‑host]**
+- El decodificador se libera en `vkDestroyDevice` y solo atiende a su dispositivo (antes podía usar objetos de un dispositivo ya destruido).
+
+### Formatos
+- **BC6H (UFLOAT/SFLOAT → RGBA16F) y BC7 (UNORM/sRGB → RGBA8)** con `bcdec` (MIT/Unlicense). Antes se anunciaban como compatibles pero la creación de la imagen fallaba. **[V‑host]**: 54/54 casos idénticos (o dentro de la tolerancia del redondeo) frente a un decodificador independiente (Pillow) para BC1–BC7, tamaños impares y decodificación multihilo.
+- **Corregido un fallo heredado en BC4 multihilo:** usaba bloques de 16 bytes en vez de 8 al repartir la textura entre hilos, de modo que el 75 % de los texels salían mal y se leía fuera del búfer de origen (**AddressSanitizer: heap-buffer-overflow**) en texturas BC4 de 128 px de alto o más. **[V‑host]**
+- Propiedades de formato: para BC emulado se exponen solo las capacidades que un formato comprimido puede tener (muestreo, filtrado, transferencia, blit de origen), y las propiedades de imagen se piden al driver con el formato descomprimido (antes eran valores fijos inventados). ETC2/EAC/ASTC, nativos en Mali, no se tocan; si un driver no los soporta, siguen sin anunciarse.
+- `bcdec`: corregido un desplazamiento con signo indefinido detectado por UBSan (ver `third_party/README.LURVETA`).
+
+### Congelamientos de Vortek
+- `VK_ERROR_DEVICE_LOST` (submit, acquire, waits) y cualquier salida del bucle del servidor marcan `RING_STATUS_EXIT` en los dos anillos: el juego recibe `VK_ERROR_DEVICE_LOST` en lugar de quedarse esperando para siempre. Se registra en el log y en `files/logs/vortek-errors.log`. Las esperas internas del decodificador tienen límite (avisos cada 2 s, fallo controlado a los 20 s). Comprobación con el juego colgado: **[Disp.]**
+
+### Optimizaciones
+- **Caché de pipelines persistente** (Vortek › *Caché de pipelines persistente*, activada por defecto): solo cuando el juego no aporta caché (DXVK 2.x, wined3d). Cabecera propia con dispositivo, driver, UUID y suma de comprobación; un archivo ajeno o dañado se descarta. **[V‑host]**: guardar/cargar exacto y rechazo de archivos corruptos o de otro driver. Menos tirones a partir de la segunda partida: **[Disp.]** (lavapipe no guarda pipelines en su caché).
+- **Variante `release`** no depurable, firmada con la misma clave que la debug. Mismo applicationId. **[V‑apk]**
+- `BOX64_DYNACACHE` disponible (desactivado por defecto) en los presets personalizados de Box64; el Box64 0.4.4 incluido lo admite. Efecto: **[Disp.]**
+
+### Benchmark
+- `events.csv` con tirones (> 1 s), congelamientos (ningún fotograma en 5 s) y errores fatales de Vortek. `summary.txt` añade tirones por encima de 100 ms, tiempo hasta el fallo (≥ 10 s sin fotogramas o error fatal), CPU media y memoria máxima de los procesos de la app (app + Wine + Box64), temperaturas máximas y la fuente de los contadores de GPU (o "no legible"). `sensors.csv` añade `proc_cpu_pct`, `proc_rss_mb`, `procs`, `top_proc`, `gpu_load_pct` y `gpu_freq_mhz`. **[V‑host]**: muestreadores sobre `/proc` real.
+- `tools/bench/analyze.py`: añade tirones por minuto, paradas y tiempo congelado a la comparación A/B (también con capturas de SurfaceFlinger de Winlator 11.2). **[V‑host]** con registros sintéticos de resultado conocido.
+
+### Pruebas
+- `tools/vortek-host-tests/run_tests.sh` y `tools/host-tests/run.sh` (este último ejecuta todo). Requisitos: `cc`, Python 3 con Pillow, Mesa lavapipe y la capa de validación de Khronos.
+
 ## 1.0.0
 
 ### P0 — Producto independiente

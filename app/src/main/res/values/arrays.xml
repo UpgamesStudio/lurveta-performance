@@ -146,6 +146,13 @@
         <item>Português</item>
         <item>Русский</item>
     </string-array>
+    <!-- LURVETA: order = TEXTURE_UPLOAD_MODE_* in vortekrenderer/include/texture_decoder.h -->
+    <string-array name="texture_upload_mode_entries">
+        <item>Inline (recommended)</item>
+        <item>Batched + barriers</item>
+        <item>Batched (LURVETA 1.0)</item>
+        <item>Synchronous (Winlator 11.2)</item>
+    </string-array>
     <string-array name="resource_memory_type_entries">
         <item>@string/auto</item>
         <item>Opaque FD</item>

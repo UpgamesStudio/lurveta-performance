@@ -9,6 +9,7 @@ typedef struct PipelineCreateRequest {
     uint32_t pipelineCount;
     void* pipelineInfos;
     ShaderInspector* shaderInspector;
+    PersistentPipelineCache* persistentCache; // LURVETA: set when the app passed no cache
     MemoryPool memoryPool;
     int notifyFd;
 } PipelineCreateRequest;
@@ -35,6 +36,10 @@ static void pipelineCreateThread(void* param) {
         }
 
         result = vulkanWrapper.vkCreateComputePipelines(pipelineCreateRequest->device, pipelineCreateRequest->pipelineCache, pipelineCreateRequest->pipelineCount, createInfos, NULL, pipelines);
+    }
+
+    if (result == VK_SUCCESS && pipelineCreateRequest->persistentCache) {
+        PersistentPipelineCache_onPipelinesCreated(pipelineCreateRequest->persistentCache, pipelineCreateRequest->pipelineCount);
     }
 
     vt_free(&pipelineCreateRequest->memoryPool);
@@ -79,6 +84,10 @@ void AsyncPipelineCreator_create(VkContext* context, PipelineType type) {
 
     pipelineCreateRequest->device = VkObject_fromId(deviceId);
     pipelineCreateRequest->pipelineCache = VkObject_fromId(pipelineCacheId);
+    if (!pipelineCreateRequest->pipelineCache && context->pipelineCache && context->pipelineCache->device == pipelineCreateRequest->device) {
+        pipelineCreateRequest->pipelineCache = context->pipelineCache->cache;
+        pipelineCreateRequest->persistentCache = context->pipelineCache;
+    }
 
     int fds[2] = {0};
     char success = pipe(fds) == 0 ? 1 : 0;
