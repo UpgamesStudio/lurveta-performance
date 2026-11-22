@@ -272,6 +272,34 @@
             android:orientation="vertical"
             android:visibility="gone">
 
+            <!-- LURVETA: per-game performance profile (fills the fields below; nothing is applied until OK). -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp">
+
+                <LinearLayout style="@style/FieldSet">
+                    <Spinner
+                        style="@style/ComboBox"
+                        android:id="@+id/SLurvetaProfile"
+                        android:layout_width="match_parent"
+                        android:entries="@array/lurveta_profile_entries" />
+
+                    <TextView
+                        android:id="@+id/TVLurvetaProfileHint"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorSecondaryText" />
+                </LinearLayout>
+
+                <TextView
+                    style="@style/FieldSetLabel"
+                    android:background="?attr/colorSecondarySurface"
+                    android:text="@string/lurveta_profile" />
+            </FrameLayout>
+
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

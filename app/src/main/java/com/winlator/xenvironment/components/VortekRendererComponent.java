@@ -42,6 +42,9 @@ public class VortekRendererComponent extends EnvironmentComponent implements Con
         public byte resourceMemoryType = 0;
         public String[] exposedDeviceExtensions = null;
         public final String libvulkanPath = null;
+        // LURVETA: priority + ADPF hints for the request thread; frame budget for ADPF.
+        public boolean performanceHints = true;
+        public int targetFrameRate = 60;
 
         public static Options fromKeyValueSet(Context context, KeyValueSet config) {
             if (config == null || config.isEmpty()) return new Options();
@@ -61,6 +64,7 @@ public class VortekRendererComponent extends EnvironmentComponent implements Con
             options.maxDeviceMemory = (short)config.getInt("maxDeviceMemory");
             options.imageCacheSize = (short)config.getInt("imageCacheSize", VortekRendererComponent.IMAGE_CACHE_SIZE);
             options.resourceMemoryType = (byte)config.getInt("resourceMemoryType");
+            options.performanceHints = config.getBoolean("performanceHints", true);
 
             // LURVETA: always the system Vulkan driver (adrenotools custom drivers removed).
             return options;

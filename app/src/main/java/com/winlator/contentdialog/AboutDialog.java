@@ -10,6 +10,8 @@ import android.widget.TextView;
 
 import com.winlator.BuildConfig;
 import com.winlator.R;
+import com.winlator.core.HardwareInfo;
+import com.winlator.core.StringUtils;
 
 public class AboutDialog extends ContentDialog {
     public AboutDialog(Context context) {
@@ -43,6 +45,23 @@ public class AboutDialog extends ContentDialog {
                 "",
                 "Full license texts: licenses/ inside the APK and the source repository."
             );
+
+            // LURVETA: detected hardware / compatibility information.
+            HardwareInfo.Gpu gpu = HardwareInfo.getGpu(context);
+            String bcSupport = gpu.textureCompressionBC ? "native (GPU)" : "decoded by LURVETA Vortek (CPU, batched upload)";
+            String hardwareHTML = String.join("<br />",
+                "<b>Detected hardware</b>",
+                "SoC: " + Html.escapeHtml(HardwareInfo.getSocName()),
+                "CPU: " + Html.escapeHtml(HardwareInfo.getCpuSummary()),
+                "GPU: " + Html.escapeHtml(gpu.deviceName.isEmpty() ? "unknown" : gpu.deviceName) + " (" + gpu.family.label + ")",
+                "Driver: " + Html.escapeHtml((gpu.driverName + " " + gpu.driverInfo).trim()) + " | Vulkan " + gpu.getApiVersionString(),
+                "BC textures: " + bcSupport,
+                "RAM: " + StringUtils.formatBytes(HardwareInfo.getTotalMemory(context)),
+                "Mali optimizations: " + (gpu.isMali() ? "active" : "not applicable (non-Mali GPU)"),
+                ""
+            );
+            TextView tvHardware = findViewById(R.id.TVHardwareInfo);
+            tvHardware.setText(Html.fromHtml(hardwareHTML, Html.FROM_HTML_MODE_LEGACY));
 
             TextView tvCreditsAndThirdPartyApps = findViewById(R.id.TVCreditsAndThirdPartyApps);
             tvCreditsAndThirdPartyApps.setText(Html.fromHtml(creditsAndThirdPartyAppsHTML, Html.FROM_HTML_MODE_LEGACY));

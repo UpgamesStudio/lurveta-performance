@@ -357,4 +357,17 @@
     <string name="fgs_notification_content_else">LURVETA Performance is running in the background</string>
     <string name="save_mem_on_run_from_steam">Save memory on run from Steam</string>
     <string name="present_mode">Present Mode</string>
+    <!-- LURVETA Performance -->
+    <string name="benchmark_toggle">Benchmark (start / stop)</string>
+    <string name="benchmark_started">Benchmark recording started</string>
+    <string name="benchmark_saved">Benchmark saved to</string>
+    <string name="benchmark_failed">Unable to create the benchmark folder</string>
+    <string name="performance_hints">Performance hints (thread priority + Android ADPF)</string>
+    <string name="lurveta_profile">LURVETA profile</string>
+    <string name="profile_custom">Custom (keep current settings)</string>
+    <string name="profile_performance">Performance (Mali): Box64 Performance, 960x544</string>
+    <string name="profile_balanced">Balanced: Box64 Intermediate, 1280x720</string>
+    <string name="profile_compatibility">Compatibility: Box64 Conservative, 1280x720</string>
+    <string name="profile_stability">Stability: Box64 Stability, 1280x720, no hints</string>
+    <string name="profile_hint">Suggested for this device: %1$s. A profile only fills the fields below; measure with the benchmark before keeping it.</string>
 </resources>

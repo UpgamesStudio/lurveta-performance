@@ -44,6 +44,7 @@ import com.winlator.contentdialog.VKD3DConfigDialog;
 import com.winlator.contentdialog.VirGLConfigDialog;
 import com.winlator.contentdialog.WineD3DConfigDialog;
 import com.winlator.core.AppUtils;
+import com.winlator.core.BenchmarkRecorder;
 import com.winlator.core.CrashLogger;
 import com.winlator.core.DefaultVersion;
 import com.winlator.core.EnvVars;
@@ -338,6 +339,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
 
     @Override
     protected void onDestroy() {
+        stopBenchmark();
         winHandler.stop();
         if (environment != null) environment.stopEnvironmentComponents();
         ForegroundService.stopSession(this);
@@ -410,6 +412,10 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
                 debugDialog.show();
                 drawerLayout.closeDrawers();
                 break;
+            case R.id.menu_item_benchmark:
+                toggleBenchmark();
+                drawerLayout.closeDrawers();
+                break;
             case R.id.menu_item_touchpad_help:
                 showTouchpadHelpDialog();
                 break;
@@ -425,6 +431,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     }
 
     private void exit() {
+        stopBenchmark();
         winHandler.stop();
         if (environment != null) environment.stopEnvironmentComponents();
 
@@ -545,6 +552,9 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
 
         if (graphicsDriver[0].equals(GraphicsDrivers.VORTEK)) {
             VortekRendererComponent.Options options = VortekRendererComponent.Options.fromKeyValueSet(this, graphicsDriverConfig[0]);
+            // LURVETA: ADPF frame budget = DXVK frame-rate cap if set, otherwise 60 FPS (sustained target).
+            int framerateCap = dxwrapperConfig != null && dxwrapperConfig.length > 0 ? dxwrapperConfig[0].getInt("framerate", 0) : 0;
+            options.targetFrameRate = framerateCap > 0 ? framerateCap : 60;
             VortekRendererComponent vortekRendererComponent = new VortekRendererComponent(xServer, UnixSocketConfig.create(rootPath, UnixSocketConfig.VORTEK_SERVER_PATH), options);
             environment.addComponent(vortekRendererComponent);
         }
@@ -605,7 +615,9 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         inputControlsView.setVisibility(View.GONE);
         rootView.addView(inputControlsView);
 
-        if (container != null && container.getHUDMode() != FrameRating.Mode.DISABLED.ordinal()) {
+        if (container != null) {
+            // LURVETA: always created so frame timing is available to the benchmark recorder;
+            // in DISABLED mode nothing is drawn and the per-frame cost is one timestamp store.
             frameRating = new FrameRating(this);
             frameRating.setMode(FrameRating.Mode.values()[container.getHUDMode()]);
             frameRating.setVisibility(View.GONE);
@@ -1112,5 +1124,39 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             return true;
         }
         else return false;
+    }
+
+    // ---- LURVETA: benchmark recording ------------------------------------------------------
+    private BenchmarkRecorder benchmarkRecorder;
+
+    private void toggleBenchmark() {
+        if (frameRating == null) return;
+        if (benchmarkRecorder != null && benchmarkRecorder.isRunning()) {
+            File outputDir = benchmarkRecorder.getOutputDir();
+            stopBenchmark();
+            AppUtils.showToast(this, getString(R.string.benchmark_saved)+" "+outputDir.getPath());
+            return;
+        }
+
+        String label = shortcut != null ? shortcut.name : (container != null ? container.getName() : "session");
+        String profile = shortcut != null ? shortcut.getExtra("lurvetaProfile", "custom") : "custom";
+        frameRating.reset();
+        benchmarkRecorder = new BenchmarkRecorder(this, frameRating.getFrameStats(), label, profile);
+        if (benchmarkRecorder.start()) {
+            frameRating.setRecording(true);
+            AppUtils.showToast(this, R.string.benchmark_started);
+        }
+        else {
+            benchmarkRecorder = null;
+            AppUtils.showToast(this, R.string.benchmark_failed);
+        }
+    }
+
+    private void stopBenchmark() {
+        if (benchmarkRecorder != null) {
+            benchmarkRecorder.stop();
+            benchmarkRecorder = null;
+            if (frameRating != null) frameRating.setRecording(false);
+        }
     }
 }

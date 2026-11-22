@@ -1,3 +1,4 @@
+#include <time.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -147,15 +148,31 @@ void RingBuffer_free(RingBuffer* ring) {
     free(ring);
 }
 
+static inline uint64_t ringMonotonicNanos() {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t)ts.tv_sec * 1000000000ull + ts.tv_nsec;
+}
+
 bool RingBuffer_waitForRead(RingBuffer* ring, uint32_t size) {
+    // Fast path: data already available (no timing overhead).
+    if (RingBuffer_size(ring) >= size) return true;
+
+    // Slow path: account the blocked time (used to report real work time to ADPF).
+    uint64_t start = ringMonotonicNanos();
     uint32_t busyWaitIter = 0;
+    bool result = true;
     do {
         if (RingBuffer_size(ring) >= size) break;
         busyWait(&busyWaitIter);
-        if (RingBuffer_hasStatus(ring, RING_STATUS_EXIT)) return false;
+        if (RingBuffer_hasStatus(ring, RING_STATUS_EXIT)) {
+            result = false;
+            break;
+        }
     }
     while (1);
-    return true;
+    ring->waitNanos += ringMonotonicNanos() - start;
+    return result;
 }
 
 bool RingBuffer_waitForWrite(RingBuffer* ring, uint32_t size) {
