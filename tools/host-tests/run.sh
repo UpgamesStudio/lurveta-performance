@@ -19,6 +19,7 @@ ASAN_OPTIONS=detect_leaks=0 "$T/td"
 
 echo "== Vortek host tests (inline uploads, BC1-BC7 reference, pipeline cache)"
 "$ROOT/tools/vortek-host-tests/run_tests.sh" "$T/vortek"
+"$ROOT/tools/vortek-vtio/run_tests.sh" "$T/vtio"
 
 echo "== Benchmark samplers (ProcessSampler on the real /proc, GpuSampler fallback)"
 JAVAC="${JAVA_HOME:+$JAVA_HOME/bin/}javac"; JAVARUN="${JAVA_HOME:+$JAVA_HOME/bin/}java"

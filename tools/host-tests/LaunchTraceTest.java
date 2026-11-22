@@ -41,6 +41,9 @@ public class LaunchTraceTest {
         // Box64/Wine output with thousands of noise lines around one real error.
         StringBuilder out = new StringBuilder();
         for (int i = 0; i < 3000; i++) out.append("[BOX64] Warning, function glVertex2hNV not found in lib libGL.so.1\n");
+        out.append("LURVETA vtio: active in pid 4242 (EINTR retry on)\n");
+        out.append("info:  Required Vulkan extension VK_EXT_robustness2 not supported\n");
+        out.append("LURVETA vtio: poll (vkWaitForFences) interrupted by a signal (EINTR) in pid 4242, count 1, retried\n");
         out.append("wine: Unhandled page fault on read access to 0000000000000010 at address 0000000140123456 (thread 0104)\n");
         for (int i = 0; i < 500; i++) out.append("[BOX64] Warning, function glTextureBarrierNV not found in lib libGL.so.1\n");
         Files.write(Paths.get(files.getPath(), "logs/launch/guest-output.log"), out.toString().getBytes());
@@ -68,6 +71,8 @@ public class LaunchTraceTest {
         check(Arrays.stream(report.split("\n")).noneMatch(l -> l.contains("probe GTAIV.exe") && l.contains("IDLE")), "a busy process is never reported idle (first sample has no baseline)");
         check(report.contains("VULKAN CALL JOURNAL of client 88") && report.contains("vkCreateSwapchainKHR x1 -> VK_ERROR_SURFACE_LOST_KHR"), "call journal in the report");
         check(report.contains("IMPORTANT LINES") && report.contains("wine: Unhandled page fault"), "crash line found inside the noise");
+        check(report.contains("vortek client EINTR fix (vtio): loaded | waits interrupted by signals: yes"), "vtio shim load and EINTR events summarised");
+        check(report.contains("KNOWN CAUSE: this DXVK version requires VK_EXT_robustness2"), "DXVK 2.x robustness2 requirement explained");
         check(report.contains("noise filtered: 3500 lines"), "noise counted, not shown");
         check(report.contains("still running when the session ended: none") || report.contains("still running when the session ended: GTAIV.exe"), "alive-at-end line present");
         check(report.contains("vortek client 77") && report.contains("vortek client 88"), "each Vulkan client reported separately");

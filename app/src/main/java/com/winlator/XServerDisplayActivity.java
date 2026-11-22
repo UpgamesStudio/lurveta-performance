@@ -803,7 +803,10 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         }
 
         // LURVETA: Turnip (Adreno-only) was removed; Vortek is the only Vulkan driver.
-        if (graphicsDriver[0].equals(GraphicsDrivers.VORTEK) && (changed || MainActivity.DEBUG_MODE)) {
+        // LURVETA: the Vortek archive now also carries liblurveta_vtio.so (EINTR-safe client I/O);
+        // installs extracted by an older build lack it, so re-extract once when it is missing.
+        boolean vortekOutdated = !new File(libDir, "liblurveta_vtio.so").isFile();
+        if (graphicsDriver[0].equals(GraphicsDrivers.VORTEK) && (changed || vortekOutdated || MainActivity.DEBUG_MODE)) {
             TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, this, "graphics_driver/vortek-" + DefaultVersion.VORTEK + ".tzst", rootDir);
         }
 

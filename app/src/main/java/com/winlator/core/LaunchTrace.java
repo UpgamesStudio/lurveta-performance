@@ -585,6 +585,12 @@ public final class LaunchTrace {
         sb.append("\n--- BOX64 / WINE: IMPORTANT LINES (whole output, ").append(outputFile.length()).append(" bytes; repeated noise filtered) ---\n");
         for (String line : scan.important) sb.append(line).append('\n');
         if (scan.importantDropped > 0) sb.append("(").append(scan.importantDropped).append(" more important lines not shown)\n");
+        sb.append("vortek client EINTR fix (vtio): ").append(scan.vtioActive ? "loaded" : "NOT seen in the output")
+          .append(scan.vtioEintr > 0 ? " | waits interrupted by signals: yes (see 'LURVETA vtio' lines)" : " | waits interrupted by signals: none logged").append('\n');
+        if (scan.dxvkNeedsRobustness2) {
+            sb.append("KNOWN CAUSE: this DXVK version requires VK_EXT_robustness2, which this GPU driver does not offer;\n")
+              .append("  DXVK 2.x cannot create a D3D11 device here. Use DXVK 1.10.x in the container settings.\n");
+        }
         sb.append("noise filtered: ").append(scan.noise).append(" lines (\"function ... not found in lib\", wined3d PolygonOffset)\n");
         sb.append("\n--- BOX64 / WINE OUTPUT (last ").append(scan.tail.size()).append(" lines without noise) ---\n");
         for (String line : scan.tail) sb.append(line).append('\n');
@@ -596,13 +602,17 @@ public final class LaunchTrace {
     private static final int JOURNAL_LINES = 160;
     private static final String[] NOISE = {"not found in lib", "PolygonOffset scale factor detection failed"};
     private static final String[] IMPORTANT = {"err:", "Unhandled", "xception", "wine: ", "rror", "fatal", "Fatal", "crash", "Crash",
-        "SIGSEGV", "SIGILL", "SIGBUS", "Assertion", "abort", "Abort", "page fault", "backtrace", "Backtrace", "killed", "Killed", "failed", "Failed"};
+        "SIGSEGV", "SIGILL", "SIGBUS", "Assertion", "abort", "Abort", "page fault", "backtrace", "Backtrace", "killed", "Killed", "failed", "Failed",
+        "not supported", "LURVETA vtio"};
 
     private static final class OutputScan {
         final List<String> important = new ArrayList<>();
         final java.util.ArrayDeque<String> tail = new java.util.ArrayDeque<>();
         int importantDropped = 0;
         int noise = 0;
+        boolean dxvkNeedsRobustness2 = false;
+        boolean vtioActive = false;
+        int vtioEintr = 0;
     }
 
     /** Reads the whole Box64/Wine output once: keeps every important line (up to 250) and the tail without noise. */
@@ -624,6 +634,9 @@ public final class LaunchTrace {
                 previous = line;
 
                 addTail(scan, line);
+                if (line.contains("Required Vulkan extension VK_EXT_robustness2 not supported")) scan.dxvkNeedsRobustness2 = true;
+                if (line.startsWith("LURVETA vtio: active")) scan.vtioActive = true;
+                if (line.startsWith("LURVETA vtio:") && line.contains("EINTR")) scan.vtioEintr++;
                 for (String k : IMPORTANT) {
                     if (line.contains(k)) {
                         if (scan.important.size() < 250) scan.important.add(line);
