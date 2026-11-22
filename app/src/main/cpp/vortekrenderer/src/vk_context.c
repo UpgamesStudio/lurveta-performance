@@ -427,10 +427,8 @@ void destroyVkContext(JNIEnv* env, VkContext* context) {
 
     context->graphicsQueueIndex = 0;
 
-    if (context->textureDecoder) {
-        TextureDecoder_destroyDetached(context->textureDecoder);
-        context->textureDecoder = NULL;
-    }
+    for (int i = 0; i < context->textureDecoderCount; i++) TextureDecoder_destroyDetached(context->textureDecoders[i]);
+    context->textureDecoderCount = 0;
 
     // The client went away without vkDestroyDevice (typical when Wine is killed): keep what was
     // compiled. The VkPipelineCache itself is left to the (leaked) device: a pipeline thread may

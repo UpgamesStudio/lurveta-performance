@@ -142,17 +142,25 @@ void initVulkanDevice(VkContext* context, VkPhysicalDevice physicalDevice, VkDev
     VkPhysicalDeviceFeatures supportedFeatures = {0};
     vulkanWrapper.vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
 
-    // LURVETA: the decoder owns objects of ONE device (staging buffers, command pool, fences) and is
-    // released in vkDestroyDevice; another device created meanwhile is not routed through it.
-    if (!context->textureDecoder) context->textureDecoder = TextureDecoder_create(context, physicalDevice, device, &supportedFeatures);
+    // LURVETA: one decoder per device (it owns staging buffers, a command pool and fences of that device)
+    // and it is released in vkDestroyDevice. Every device gets its own: a device without one would
+    // create BC images the driver cannot sample, and Mali crashes when they are copied.
+    TextureDecoder* deviceDecoder = NULL;
+    if (context->textureDecoderCount < MAX_TEXTURE_DECODERS) {
+        deviceDecoder = TextureDecoder_create(context, physicalDevice, device, &supportedFeatures);
+        if (deviceDecoder) context->textureDecoders[context->textureDecoderCount++] = deviceDecoder;
+    }
+    else if (!supportedFeatures.textureCompressionBC) {
+        VkContext_logFailure(context, "texture decoder", VK_ERROR_TOO_MANY_OBJECTS, "more than %d devices alive: BC textures of this device are not decoded", MAX_TEXTURE_DECODERS);
+    }
     if (!context->shaderInspector) context->shaderInspector = ShaderInspector_create(context, physicalDevice, &supportedFeatures);
     {
         VkPhysicalDeviceProperties deviceProps = {0};
         vulkanWrapper.vkGetPhysicalDeviceProperties(physicalDevice, &deviceProps);
         uint64_t capMb = ((uint64_t)context->maxDeviceMemory ? (uint64_t)context->maxDeviceMemory : (deviceMemoryInfo.maxAllocationSize >> 20));
-        VkContext_logInfo(context, "STAGE device-created: device '%s' vendor 0x%x driverID %d driverVersion 0x%x | native BC=%d | decoder=%s uploadMode=%d | pipelineCache=%d | engine=%s | alloc cap %llu MB (maxDeviceMemory option %d MB)",
-                          deviceProps.deviceName, deviceProps.vendorID, (int)context->driverID, deviceProps.driverVersion, (int)supportedFeatures.textureCompressionBC,
-                          context->textureDecoder ? "active" : "off", context->textureUploadMode, (int)context->persistentPipelineCache,
+        VkContext_logInfo(context, "STAGE device-created: device '%s' (decoders alive %d) vendor 0x%x driverID %d driverVersion 0x%x | native BC=%d | decoder=%s uploadMode=%d | pipelineCache=%d | engine=%s | alloc cap %llu MB (maxDeviceMemory option %d MB)",
+                          deviceProps.deviceName, context->textureDecoderCount, deviceProps.vendorID, (int)context->driverID, deviceProps.driverVersion, (int)supportedFeatures.textureCompressionBC,
+                          deviceDecoder ? "active" : "off", context->textureUploadMode, (int)context->persistentPipelineCache,
                           context->engineName ? context->engineName : "-", (unsigned long long)capMb, (int)context->maxDeviceMemory);
     }
     if (!context->pipelineCache && context->persistentPipelineCache) context->pipelineCache = PersistentPipelineCache_create(physicalDevice, device);

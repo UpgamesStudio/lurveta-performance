@@ -7,6 +7,49 @@ extern DeviceMemoryInfo deviceMemoryInfo;
 
 #define MSG_DEBUG_UNIMPLEMENTED_FUNC "%s not implemented yet\n"
 
+
+/* ---- LURVETA: texture decoder routing (one decoder per VkDevice, see vk_context.h) ---- */
+static TextureDecoder* decoderForDevice(VkContext* context, VkDevice device) {
+    for (int i = 0; i < context->textureDecoderCount; i++) if (context->textureDecoders[i]->device == device) return context->textureDecoders[i];
+    return NULL;
+}
+
+static TextureDecoder* decoderForCommandBuffer(VkContext* context, VkCommandBuffer commandBuffer) {
+    for (int i = 0; i < context->textureDecoderCount; i++) {
+        if (SparseArray64_get(&context->textureDecoders[i]->commandBuffers, (int64_t)commandBuffer)) return context->textureDecoders[i];
+    }
+    return NULL;
+}
+
+static TextureDecoder* decoderForImage(VkContext* context, VkImage image) {
+    for (int i = 0; i < context->textureDecoderCount; i++) {
+        if (TextureDecoder_containsImage(context->textureDecoders[i], image)) return context->textureDecoders[i];
+    }
+    return NULL;
+}
+
+static void rememberQueue(VkContext* context, VkQueue queue, VkDevice device) {
+    for (int i = 0; i < context->queueDeviceCount; i++) if (context->queueDevices[i].queue == queue) { context->queueDevices[i].device = device; return; }
+    if (context->queueDeviceCount < MAX_TRACKED_QUEUES) {
+        context->queueDevices[context->queueDeviceCount].queue = queue;
+        context->queueDevices[context->queueDeviceCount].device = device;
+        context->queueDeviceCount++;
+    }
+}
+
+static void forgetDeviceQueues(VkContext* context, VkDevice device) {
+    for (int i = context->queueDeviceCount - 1; i >= 0; i--) {
+        if (context->queueDevices[i].device == device) context->queueDevices[i] = context->queueDevices[--context->queueDeviceCount];
+    }
+}
+
+static TextureDecoder* decoderForQueue(VkContext* context, VkQueue queue) {
+    for (int i = 0; i < context->queueDeviceCount; i++) {
+        if (context->queueDevices[i].queue == queue) return decoderForDevice(context, context->queueDevices[i].device);
+    }
+    return NULL;
+}
+
 void vt_handle_vkCreateInstance(VkContext* context) {
     VkInstanceCreateInfo createInfo = {0};
     vt_unserialize_vkCreateInstance(&createInfo, NULL, NULL, context->inputBuffer, &context->memoryPool);
@@ -187,10 +230,14 @@ void vt_handle_vkDestroyDevice(VkContext* context) {
     }
 
     // LURVETA: the decoder owns staging buffers, a command pool and fences of this device.
-    if (context->textureDecoder && context->textureDecoder->device == device) {
-        TextureDecoder_destroy(context->textureDecoder);
-        context->textureDecoder = NULL;
+    for (int i = 0; i < context->textureDecoderCount; i++) {
+        if (context->textureDecoders[i]->device == device) {
+            TextureDecoder_destroy(context->textureDecoders[i]);
+            context->textureDecoders[i] = context->textureDecoders[--context->textureDecoderCount];
+            break;
+        }
     }
+    forgetDeviceQueues(context, device);
 
     vulkanWrapper.vkDestroyDevice(device, NULL);
 }
@@ -249,6 +296,7 @@ void vt_handle_vkGetDeviceQueue(VkContext* context) {
 
     VkQueue queue;
     vulkanWrapper.vkGetDeviceQueue(device, queueFamilyIndex, queueIndex, &queue);
+    rememberQueue(context, queue, device);
 
     VT_SERIALIZE_CMD(VkQueue, queue);
     vt_send(context->clientRing, VK_SUCCESS, outputBuffer, bufferSize);
@@ -270,9 +318,10 @@ void vt_handle_vkQueueSubmit(VkContext* context) {
     // REAL result of vkQueueSubmit, never an early success.
     bool clientWaiting = RingBuffer_hasStatus(context->clientRing, RING_STATUS_WAIT);
     VkResult result = VK_SUCCESS;
-    if (context->textureDecoder) {
+    TextureDecoder* submitDecoder = decoderForQueue(context, queue);
+    if (submitDecoder) {
         for (uint32_t i = 0; i < submitCount && result == VK_SUCCESS; i++) {
-            result = TextureDecoder_onQueueSubmit(context->textureDecoder, queue, submits[i].commandBufferCount, submits[i].pCommandBuffers);
+            result = TextureDecoder_onQueueSubmit(submitDecoder, queue, submits[i].commandBufferCount, submits[i].pCommandBuffers);
         }
         if (result != VK_SUCCESS && result != VK_ERROR_DEVICE_LOST) {
             println("vortek: texture uploads failed before vkQueueSubmit (result %d), submitting the game's work anyway", result);
@@ -426,8 +475,9 @@ void vt_handle_vkBindBufferMemory(VkContext* context) {
 
     VkResult result = vulkanWrapper.vkBindBufferMemory(device, buffer, resourceMemory->memory, memoryOffset);
 
-    if (result == VK_SUCCESS && context->textureDecoder) {
-        TextureDecoder_addBoundBuffer(context->textureDecoder, resourceMemory, buffer, memoryOffset);
+    TextureDecoder* bindDecoder = decoderForDevice(context, device);
+    if (result == VK_SUCCESS && bindDecoder) {
+        TextureDecoder_addBoundBuffer(bindDecoder, resourceMemory, buffer, memoryOffset);
     }
 
     vt_send(context->clientRing, result, NULL, 0);
@@ -799,7 +849,7 @@ void vt_handle_vkDestroyBuffer(VkContext* context) {
     VkDevice device = VkObject_fromId(deviceId);
     VkBuffer buffer = VkObject_fromId(bufferId);
 
-    if (context->textureDecoder) TextureDecoder_removeBoundBuffer(context->textureDecoder, buffer);
+    for (int i = 0; i < context->textureDecoderCount; i++) TextureDecoder_removeBoundBuffer(context->textureDecoders[i], buffer);
     vulkanWrapper.vkDestroyBuffer(device, buffer, NULL);
 }
 
@@ -838,9 +888,10 @@ void vt_handle_vkCreateImage(VkContext* context) {
 
     VkImage image;
     VkResult result;
-    if (context->textureDecoder && context->textureDecoder->device == device && TextureDecoder_isFormatSupported(context->textureDecoder, createInfo.format)) {
+    TextureDecoder* imageDecoder = decoderForDevice(context, device);
+    if (imageDecoder && TextureDecoder_isFormatSupported(imageDecoder, createInfo.format)) {
         VkFormat originalFormat = createInfo.format;
-        result = TextureDecoder_createImage(context->textureDecoder, &createInfo, &image);
+        result = TextureDecoder_createImage(imageDecoder, &createInfo, &image);
         if (result == VK_SUCCESS) { RingBuffer_setStatus(context->clientRing, RING_STATUS_WAIT); context->imageCount++; }
         else VkContext_logFailure(context, "vkCreateImage(decoded BC)", result, "format %d %ux%u mips %u layers %u", originalFormat, createInfo.extent.width, createInfo.extent.height, createInfo.mipLevels, createInfo.arrayLayers);
     }
@@ -862,8 +913,9 @@ void vt_handle_vkDestroyImage(VkContext* context) {
     VkDevice device = VkObject_fromId(deviceId);
     VkImage image = VkObject_fromId(imageId);
 
-    if (context->textureDecoder && TextureDecoder_containsImage(context->textureDecoder, image)) {
-        TextureDecoder_destroyImage(context->textureDecoder, image);
+    TextureDecoder* imageDecoder = decoderForImage(context, image);
+    if (imageDecoder) {
+        TextureDecoder_destroyImage(imageDecoder, image);
     }
     else vulkanWrapper.vkDestroyImage(device, image, NULL);
 }
@@ -891,7 +943,8 @@ void vt_handle_vkCreateImageView(VkContext* context) {
     vt_unserialize_vkCreateImageView((VkDevice)&deviceId, &createInfo, NULL, NULL, context->inputBuffer, &context->memoryPool);
     VkDevice device = VkObject_fromId(deviceId);
 
-    if (context->textureDecoder && context->textureDecoder->device == device && TextureDecoder_isFormatSupported(context->textureDecoder, createInfo.format)) {
+    TextureDecoder* viewDecoder = decoderForDevice(context, device);
+    if (viewDecoder && TextureDecoder_isFormatSupported(viewDecoder, createInfo.format)) {
         // LURVETA: per-format mapping (sRGB stays sRGB, BC4 -> R8, BC5 -> RG8).
         createInfo.format = TextureDecoder_getDecompressedFormat(createInfo.format);
     }
@@ -1272,7 +1325,7 @@ void vt_handle_vkDestroyCommandPool(VkContext* context) {
     VkDevice device = VkObject_fromId(deviceId);
     VkCommandPool commandPool = VkObject_fromId(commandPoolId);
 
-    if (context->textureDecoder) TextureDecoder_onDestroyCommandPool(context->textureDecoder, commandPool);
+    for (int i = 0; i < context->textureDecoderCount; i++) TextureDecoder_onDestroyCommandPool(context->textureDecoders[i], commandPool);
     vulkanWrapper.vkDestroyCommandPool(device, commandPool, NULL);
 }
 
@@ -1285,7 +1338,7 @@ void vt_handle_vkResetCommandPool(VkContext* context) {
     VkDevice device = VkObject_fromId(deviceId);
     VkCommandPool commandPool = VkObject_fromId(commandPoolId);
 
-    if (context->textureDecoder) TextureDecoder_onResetCommandPool(context->textureDecoder, commandPool);
+    for (int i = 0; i < context->textureDecoderCount; i++) TextureDecoder_onResetCommandPool(context->textureDecoders[i], commandPool);
     vulkanWrapper.vkResetCommandPool(device, commandPool, flags);
 }
 
@@ -1298,8 +1351,9 @@ void vt_handle_vkAllocateCommandBuffers(VkContext* context) {
 
     VkCommandBuffer commandBuffers[allocateInfo.commandBufferCount];
     VkResult result = vulkanWrapper.vkAllocateCommandBuffers(device, &allocateInfo, commandBuffers);
-    if (result == VK_SUCCESS && context->textureDecoder) {
-        TextureDecoder_onAllocateCommandBuffers(context->textureDecoder, allocateInfo.commandPool, allocateInfo.commandBufferCount, commandBuffers);
+    TextureDecoder* allocateDecoder = decoderForDevice(context, device);
+    if (result == VK_SUCCESS && allocateDecoder) {
+        TextureDecoder_onAllocateCommandBuffers(allocateDecoder, allocateInfo.commandPool, allocateInfo.commandBufferCount, commandBuffers);
     }
 
     VT_SERIALIZE_CMD(vkAllocateCommandBuffers, VK_NULL_HANDLE, &allocateInfo, commandBuffers);
@@ -1318,7 +1372,7 @@ void vt_handle_vkFreeCommandBuffers(VkContext* context) {
     VkCommandBuffer commandBuffers[commandBufferCount];
     vt_unserialize_vkFreeCommandBuffers(VK_NULL_HANDLE, VK_NULL_HANDLE, NULL, commandBuffers, context->inputBuffer, &context->memoryPool);
 
-    if (context->textureDecoder) TextureDecoder_onFreeCommandBuffers(context->textureDecoder, commandBufferCount, commandBuffers);
+    for (int i = 0; i < context->textureDecoderCount; i++) TextureDecoder_onFreeCommandBuffers(context->textureDecoders[i], commandBufferCount, commandBuffers);
     vulkanWrapper.vkFreeCommandBuffers(device, commandPool, commandBufferCount, commandBuffers);
 }
 
@@ -1328,7 +1382,8 @@ void vt_handle_vkBeginCommandBuffer(VkContext* context) {
     vt_unserialize_vkBeginCommandBuffer((VkCommandBuffer)&commandBufferId, &beginInfo, context->inputBuffer, &context->memoryPool);
     VkCommandBuffer commandBuffer = VkObject_fromId(commandBufferId);
 
-    if (context->textureDecoder) TextureDecoder_onBeginCommandBuffer(context->textureDecoder, commandBuffer, beginInfo.flags);
+    TextureDecoder* beginDecoder = decoderForCommandBuffer(context, commandBuffer);
+    if (beginDecoder) TextureDecoder_onBeginCommandBuffer(beginDecoder, commandBuffer, beginInfo.flags);
     vulkanWrapper.vkBeginCommandBuffer(commandBuffer, &beginInfo);
 }
 
@@ -1366,7 +1421,8 @@ void vt_handle_vkResetCommandBuffer(VkContext* context) {
     vt_unserialize_vkResetCommandBuffer((VkCommandBuffer)&commandBufferId, &flags, context->inputBuffer, &context->memoryPool);
     VkCommandBuffer commandBuffer = VkObject_fromId(commandBufferId);
 
-    if (context->textureDecoder) TextureDecoder_onResetCommandBuffer(context->textureDecoder, commandBuffer);
+    TextureDecoder* resetDecoder = decoderForCommandBuffer(context, commandBuffer);
+    if (resetDecoder) TextureDecoder_onResetCommandBuffer(resetDecoder, commandBuffer);
     vulkanWrapper.vkResetCommandBuffer(commandBuffer, flags);
 }
 
@@ -1685,8 +1741,9 @@ void vt_handle_vkCmdCopyBufferToImage(VkContext* context) {
     VkBufferImageCopy regions[regionCount];
     vt_unserialize_vkCmdCopyBufferToImage(VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, NULL, NULL, regions, context->inputBuffer, &context->memoryPool);
 
-    if (context->textureDecoder && TextureDecoder_containsImage(context->textureDecoder, dstImage)) {
-        TextureDecoder_copyBufferToImage(context->textureDecoder, commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, regions);
+    TextureDecoder* copyDecoder = decoderForImage(context, dstImage);
+    if (copyDecoder) {
+        TextureDecoder_copyBufferToImage(copyDecoder, commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, regions);
     }
     else vulkanWrapper.vkCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, regions);
 }
@@ -2018,7 +2075,8 @@ void vt_handle_vkCmdExecuteCommands(VkContext* context) {
     VkCommandBuffer commandBuffers[commandBufferCount];
     vt_unserialize_vkCmdExecuteCommands(VK_NULL_HANDLE, NULL, commandBuffers, context->inputBuffer, &context->memoryPool);
 
-    if (context->textureDecoder) TextureDecoder_onExecuteCommands(context->textureDecoder, commandBuffer, commandBufferCount, commandBuffers);
+    TextureDecoder* executeDecoder = decoderForCommandBuffer(context, commandBuffer);
+    if (executeDecoder) TextureDecoder_onExecuteCommands(executeDecoder, commandBuffer, commandBufferCount, commandBuffers);
     vulkanWrapper.vkCmdExecuteCommands(commandBuffer, commandBufferCount, commandBuffers);
 }
 
@@ -2437,14 +2495,15 @@ void vt_handle_vkBindBufferMemory2(VkContext* context) {
     VkDevice device = VkObject_fromId(deviceId);
 
     VkBindBufferMemoryInfo bindInfos[bindInfoCount];
-    if (context->textureDecoder) {
+    TextureDecoder* bindDecoder = decoderForDevice(context, device);
+    if (bindDecoder) {
         vortekSerializerCastVkObject = false;
         vt_unserialize_vkBindBufferMemory2(VK_NULL_HANDLE, NULL, bindInfos, context->inputBuffer, &context->memoryPool);
         vortekSerializerCastVkObject = true;
 
         for (int i = 0; i < bindInfoCount; i++) {
             ResourceMemory* resourceMemory = (ResourceMemory*)bindInfos[i].memory;
-            TextureDecoder_addBoundBuffer(context->textureDecoder, resourceMemory, bindInfos[i].buffer, bindInfos[i].memoryOffset);
+            TextureDecoder_addBoundBuffer(bindDecoder, resourceMemory, bindInfos[i].buffer, bindInfos[i].memoryOffset);
             bindInfos[i].memory = resourceMemory->memory;
         }
     }
@@ -2452,8 +2511,8 @@ void vt_handle_vkBindBufferMemory2(VkContext* context) {
 
     VkResult result = vulkanWrapper.vkBindBufferMemory2(device, bindInfoCount, bindInfos);
 
-    if (result != VK_SUCCESS && context->textureDecoder) {
-        for (int i = 0; i < bindInfoCount; i++) TextureDecoder_removeBoundBuffer(context->textureDecoder, bindInfos[i].buffer);
+    if (result != VK_SUCCESS && bindDecoder) {
+        for (int i = 0; i < bindInfoCount; i++) TextureDecoder_removeBoundBuffer(bindDecoder, bindInfos[i].buffer);
     }
 
     vt_send(context->clientRing, result, NULL, 0);
@@ -2680,6 +2739,7 @@ void vt_handle_vkGetDeviceQueue2(VkContext* context) {
 
     VkQueue queue;
     vulkanWrapper.vkGetDeviceQueue2(device, &queueInfo, &queue);
+    rememberQueue(context, queue, device);
 
     VT_SERIALIZE_CMD(VkQueue, queue);
     vt_send(context->clientRing, VK_SUCCESS, outputBuffer, bufferSize);
@@ -3405,8 +3465,9 @@ void vt_handle_vkCmdCopyBufferToImage2(VkContext* context) {
     vt_unserialize_vkCmdCopyBufferToImage2((VkCommandBuffer)&commandBufferId, &copyBufferToImageInfo, context->inputBuffer, &context->memoryPool);
     VkCommandBuffer commandBuffer = VkObject_fromId(commandBufferId);
 
-    if (context->textureDecoder && TextureDecoder_containsImage(context->textureDecoder, copyBufferToImageInfo.dstImage)) {
-        TextureDecoder_copyBufferToImage2(context->textureDecoder, commandBuffer, copyBufferToImageInfo.srcBuffer, copyBufferToImageInfo.dstImage, copyBufferToImageInfo.dstImageLayout, &copyBufferToImageInfo);
+    TextureDecoder* copyDecoder = decoderForImage(context, copyBufferToImageInfo.dstImage);
+    if (copyDecoder) {
+        TextureDecoder_copyBufferToImage2(copyDecoder, commandBuffer, copyBufferToImageInfo.srcBuffer, copyBufferToImageInfo.dstImage, copyBufferToImageInfo.dstImageLayout, &copyBufferToImageInfo);
     }
     else vulkanWrapper.vkCmdCopyBufferToImage2(commandBuffer, &copyBufferToImageInfo);
 }
@@ -3506,12 +3567,13 @@ void vt_handle_vkQueueSubmit2(VkContext* context) {
 
     bool clientWaiting = RingBuffer_hasStatus(context->clientRing, RING_STATUS_WAIT);
     VkResult result = VK_SUCCESS;
-    if (context->textureDecoder) {
+    TextureDecoder* submitDecoder = decoderForQueue(context, queue);
+    if (submitDecoder) {
         for (uint32_t i = 0; i < submitCount && result == VK_SUCCESS; i++) {
             uint32_t count = submits[i].commandBufferInfoCount;
             VkCommandBuffer commandBuffers[count > 0 ? count : 1];
             for (uint32_t j = 0; j < count; j++) commandBuffers[j] = submits[i].pCommandBufferInfos[j].commandBuffer;
-            result = TextureDecoder_onQueueSubmit(context->textureDecoder, queue, count, commandBuffers);
+            result = TextureDecoder_onQueueSubmit(submitDecoder, queue, count, commandBuffers);
         }
         if (result != VK_SUCCESS && result != VK_ERROR_DEVICE_LOST) {
             println("vortek: texture uploads failed before vkQueueSubmit2 (result %d), submitting the game's work anyway", result);

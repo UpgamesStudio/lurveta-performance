@@ -39,7 +39,16 @@ typedef struct VkContext {
     bool performanceHints;           // LURVETA: thread priority + ADPF
     int64_t targetWorkDurationNanos; // LURVETA: ADPF target (frame budget)
 
-    TextureDecoder* textureDecoder;
+    /* LURVETA: one BC texture decoder PER DEVICE. A game may keep several VkDevices alive (GTA V does);
+     * with a single decoder the other devices created BC images the driver cannot handle and the
+     * Mali driver crashed the app in vkCmdCopyBufferToImage. Look them up with the helpers in
+     * request_handler.c, never by index. */
+#define MAX_TEXTURE_DECODERS 8
+    TextureDecoder* textureDecoders[MAX_TEXTURE_DECODERS];
+    int textureDecoderCount;
+#define MAX_TRACKED_QUEUES 32
+    struct { VkQueue queue; VkDevice device; } queueDevices[MAX_TRACKED_QUEUES];
+    int queueDeviceCount;
     ShaderInspector* shaderInspector;
     ThreadPool* threadPool;
     ThreadPool* decodeThreadPool; // LURVETA: BC decoding only (never shares workers with pipeline compiles)
