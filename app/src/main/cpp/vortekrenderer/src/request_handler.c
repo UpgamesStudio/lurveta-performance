@@ -254,7 +254,7 @@ void vt_handle_vkQueueSubmit(VkContext* context) {
 
     bool clientWaiting = RingBuffer_hasStatus(context->clientRing, RING_STATUS_WAIT);
     if (context->textureDecoder) {
-        TextureDecoder_decodeAll(context->textureDecoder);
+        TextureDecoder_decodeAll(context->textureDecoder, queue);
         if (clientWaiting && !(clientWaiting = false)) vt_send(context->clientRing, VK_SUCCESS, NULL, 0);
     }
 
@@ -826,7 +826,8 @@ void vt_handle_vkCreateImageView(VkContext* context) {
     VkDevice device = VkObject_fromId(deviceId);
 
     if (context->textureDecoder && TextureDecoder_isFormatSupported(context->textureDecoder, createInfo.format)) {
-        createInfo.format = DECOMPRESSED_FORMAT;
+        // LURVETA: per-format mapping (sRGB stays sRGB, BC4 -> R8, BC5 -> RG8).
+        createInfo.format = TextureDecoder_getDecompressedFormat(createInfo.format);
     }
 
     VkImageView view;
@@ -3418,7 +3419,7 @@ void vt_handle_vkQueueSubmit2(VkContext* context) {
 
     bool clientWaiting = RingBuffer_hasStatus(context->clientRing, RING_STATUS_WAIT);
     if (context->textureDecoder) {
-        TextureDecoder_decodeAll(context->textureDecoder);
+        TextureDecoder_decodeAll(context->textureDecoder, queue);
         if (clientWaiting && !(clientWaiting = false)) vt_send(context->clientRing, VK_SUCCESS, NULL, 0);
     }
 
