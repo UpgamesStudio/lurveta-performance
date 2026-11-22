@@ -14,6 +14,27 @@
 | Estabilidad | Sin datos | Sin datos |
 | Rendimiento | Sin mediciones | Sin mediciones |
 
+## GTA V en el Dimensity 8350: falso «device lost» al esperar un fence (corrección en 1.1.1‑dev5, sin validar en el teléfono)
+
+**Informe:** «GTA V LITE V13.2 OptiJuegos». `PlayGTAV.exe` → `GTA5.exe`; DXVK 1.10.3 crea instancia y dispositivo en la Mali‑G615. Tras **solo 2 envíos a la GPU** (`submits=2 images=3 presents=0`), DXVK registra `DxvkSubmissionQueue: Failed to sync fence: VK_ERROR_DEVICE_LOST` y el juego sale con código 1. Vortek: 0 llamadas fallidas, 0 errores fatales.
+
+**Causa identificada (código):**
+- `vkWaitForFences` con espera exporta cada fence como SYNC_FD y el cliente hace `poll()`. Según la especificación de Vulkan, esa exportación **resetea el fence**.
+- Si DXVK vuelve a esperar o consulta ese fence, el driver lo ve sin señal y sin trabajo pendiente, y la exportación falla.
+- El cliente de Vortek (`libvulkan_vortek.so`, desensamblado) devuelve `-4 = VK_ERROR_DEVICE_LOST` ante **cualquier** error de ese camino, o si no recibe ningún descriptor. Es decir, era un «device lost» sin pérdida real de la GPU, y eso encaja con los 0 errores de Vortek.
+- Defecto adicional: con un fence ya señalado, el driver puede devolver `-1`. El kernel rechaza `-1` en `SCM_RIGHTS` (`EBADF`), así que no se enviaba nada y el cliente quedaba colgado. Además, en caso de error se cerraban descriptores sin inicializar.
+
+**Corrección (`fence_export.c`):**
+- Un fence ya señalado no se exporta: el cliente recibe un `eventfd` que `poll()` ve listo al instante.
+- Un fence pendiente se exporta **una vez**, y se guarda su sync fd como estado real para esperas y consultas posteriores.
+- Al resetear, reenviar, adquirir o destruir el fence, se olvida esa copia.
+- Nunca se envía un descriptor inválido.
+- Cada fallo restante de este camino queda registrado (`FAIL vkWaitForFences(export sync fd)` con el error del driver).
+
+**Prueba reproducible (host):** con un driver simulado que sigue la especificación, el algoritmo original produce `VK_ERROR_DEVICE_LOST` en la segunda espera; el nuevo no. **No está verificado en Mali** que su driver se comporte exactamente así: si GTA V sigue fallando, el nuevo informe mostrará el error real del driver en esa línea `FAIL`.
+
+**Errores de GStreamer/GTK en el mismo informe:** `libgtk-3.so.0` no se encuentra al cargar `libgstreamer` (winegstreamer, reproducción multimedia de Wine). Box64 sigue adelante («Using native libgstaudio…»). No hay evidencia de que intervenga en el cierre: el error fatal es el del fence. Se considera secundario hasta que un informe diga lo contrario.
+
 ## Evidencia real del Dimensity 8350 (informe del 22‑11‑2026, 1.1.1‑dev, release)
 
 Primera prueba con captura de arranque. Juego: «GTA IV LITE V3 By OptiJuegos», lanzado desde el gestor de archivos de Wine. Contenedor: Vortek + DXVK 1.10.3, preset de Box64 PERFORMANCE, 1280×720, audio ALSA.

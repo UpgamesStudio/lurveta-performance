@@ -17,4 +17,6 @@ glslangValidator -V -S comp "$HERE/spec.comp" -o "$OUT/spec.comp.spv" >/dev/null
 mkdir -p "$OUT/cache"
 cc $CFLAGS $SAN $INC $DEFS -DPIPELINE_CACHE_DIR=\"$OUT/cache\" "$HERE/test_pipeline_cache_vk.c" "$SRC/vortekrenderer/src/pipeline_cache.c" "$SRC/winlator/src/arrays.c" \
    -o "$OUT/test_pipeline_cache_vk" -ldl -lpthread -lm
+cc $CFLAGS $SAN $INC $DEFS "$HERE/test_fence_export.c" "$SRC/vortekrenderer/src/fence_export.c" "$SRC/winlator/src/arrays.c" \
+   -o "$OUT/test_fence_export" -lpthread
 echo "built: $OUT/bc_decode_cli $OUT/test_texture_decoder_vk"

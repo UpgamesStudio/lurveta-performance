@@ -20,6 +20,11 @@ Objetivo: aislar y corregir la regresión de arranque de GTA IV/GTA V. **No se d
 - **[V‑host]** la lógica del veredicto (cada punto de parada → diagnóstico correcto). **No probado en dispositivo** la captura en sí.
 - `docs/DIFERENCIAS_CON_WINLATOR_11_2.md`: comparación del camino de arranque con 11.2 (verificado: rutas reubicadas sin restos).
 
+### Corrección: falso `VK_ERROR_DEVICE_LOST` al esperar fences (GTA V)
+- Causa: exportar un fence como SYNC_FD lo resetea (especificación de Vulkan). La siguiente espera o consulta del mismo fence fallaba, y el cliente de Vortek convierte cualquier fallo en `VK_ERROR_DEVICE_LOST`. GTA V lo registraba tras 2 envíos a la GPU, sin pérdida real del dispositivo.
+- Ahora: cada fence se exporta como mucho una vez y su sync fd se conserva como estado real; los fences ya señalados no se exportan; nunca se envían descriptores inválidos (antes, un `-1` hacía fallar `sendmsg` y el cliente quedaba colgado); los fallos restantes se registran.
+- **[V‑host]** driver simulado según la especificación: el algoritmo original reproduce el `DEVICE_LOST`, el nuevo no; el kernel rechaza `-1` en `SCM_RIGHTS`. **Pendiente de validar en el Dimensity 8350 con GTA V.**
+
 ### Captura: correcciones tras el primer informe real (GTA IV en el Dimensity 8350)
 - Cada cliente Vulkan escribe su propio archivo de actividad (`vortek-activity-<pid>.txt`); antes compartían uno y el informe mezclaba el escritorio de Wine con el juego.
 - FPS estimados por cliente a partir de las presentaciones (último tramo y mejor tramo).

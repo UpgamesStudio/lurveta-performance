@@ -1,3 +1,4 @@
+#include <sys/eventfd.h>
 #include "request_handler.h"
 #include "vk_context.h"
 #include "vulkan_helper.h"
@@ -279,6 +280,7 @@ void vt_handle_vkQueueSubmit(VkContext* context) {
         }
     }
 
+    FenceExport_forget(&context->fenceExport, fence);
     if (result == VK_SUCCESS) result = vulkanWrapper.vkQueueSubmit(queue, submitCount, submits, fence);
     context->submitCount++;
     if (result == VK_ERROR_DEVICE_LOST) VkContext_reportError(context, "vkQueueSubmit", result);
@@ -511,6 +513,7 @@ void vt_handle_vkQueueBindSparse(VkContext* context) {
     VkBindSparseInfo bindInfo[bindInfoCount];
     vt_unserialize_vkQueueBindSparse(VK_NULL_HANDLE, NULL, bindInfo, VK_NULL_HANDLE, context->inputBuffer, &context->memoryPool);
 
+    FenceExport_forget(&context->fenceExport, fence);
     VkResult result = vulkanWrapper.vkQueueBindSparse(queue, bindInfoCount, bindInfo, fence);
     vt_send(context->clientRing, result, NULL, 0);
 }
@@ -543,6 +546,7 @@ void vt_handle_vkDestroyFence(VkContext* context) {
     VkDevice device = VkObject_fromId(deviceId);
     VkFence fence = VkObject_fromId(fenceId);
 
+    FenceExport_forget(&context->fenceExport, fence);
     vulkanWrapper.vkDestroyFence(device, fence, NULL);
 }
 
@@ -556,6 +560,7 @@ void vt_handle_vkResetFences(VkContext* context) {
     VkFence fences[fenceCount];
     vt_unserialize_vkResetFences(VK_NULL_HANDLE, NULL, fences, context->inputBuffer, &context->memoryPool);
 
+    for (uint32_t i = 0; i < fenceCount; i++) FenceExport_forget(&context->fenceExport, fences[i]);
     vulkanWrapper.vkResetFences(device, fenceCount, fences);
 }
 
@@ -567,7 +572,7 @@ void vt_handle_vkGetFenceStatus(VkContext* context) {
     VkDevice device = VkObject_fromId(deviceId);
     VkFence fence = VkObject_fromId(fenceId);
 
-    VkResult result = vulkanWrapper.vkGetFenceStatus(device, fence);
+    VkResult result = FenceExport_status(&context->fenceExport, device, fence);
     vt_send(context->clientRing, result, NULL, 0);
 }
 
@@ -584,23 +589,42 @@ void vt_handle_vkWaitForFences(VkContext* context) {
     vt_unserialize_vkWaitForFences(VK_NULL_HANDLE, NULL, fences, NULL, NULL, context->inputBuffer, &context->memoryPool);
 
     if (timeout != 0) {
+        // LURVETA: the client polls one fd per fence. Any error here becomes VK_ERROR_DEVICE_LOST in
+        // the client, so fences are exported at most once (see fence_export.h) and only valid fds
+        // are ever sent (-1 or garbage in SCM_RIGHTS made sendmsg fail and the client hang).
         VkResult result = VK_SUCCESS;
-        int fds[fenceCount];
-        for (int i = 0; i < fenceCount; i++) {
-            VkFenceGetFdInfoKHR getFdInfo = {0};
-            getFdInfo.sType = VK_STRUCTURE_TYPE_FENCE_GET_FD_INFO_KHR;
-            getFdInfo.fence = fences[i];
-            getFdInfo.handleType = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT;
-
-            result = vulkanWrapper.vkGetFenceFd(device, &getFdInfo, &fds[i]);
-            if (result != VK_SUCCESS) break;
+        int fds[fenceCount > 0 ? fenceCount : 1];
+        int count = 0;
+        for (uint32_t i = 0; i < fenceCount; i++) {
+            fds[i] = FenceExport_waitFd(&context->fenceExport, device, fences[i], &result);
+            if (fds[i] < 0) {
+                VkContext_logFailure(context, "vkWaitForFences(export sync fd)", result, "fence %u of %u", i, fenceCount);
+                break;
+            }
+            count++;
         }
 
-        send_fds(context->clientFd, fds, fenceCount, &result, sizeof(VkResult));
-        for (int i = 0; i < fenceCount; i++) CLOSEFD(fds[i]);
+        if (result == VK_SUCCESS) {
+            send_fds(context->clientFd, fds, count, &result, sizeof(VkResult));
+        }
+        else {
+            int dummy = eventfd(1, EFD_CLOEXEC);   // the client needs one valid fd to read the error
+            send_fds(context->clientFd, &dummy, dummy >= 0 ? 1 : 0, &result, sizeof(VkResult));
+            CLOSEFD(dummy);
+            if (result == VK_ERROR_DEVICE_LOST) VkContext_reportError(context, "vkWaitForFences(export)", result);
+        }
+        for (int i = 0; i < count; i++) CLOSEFD(fds[i]);
     }
     else {
-        VkResult result = vulkanWrapper.vkWaitForFences(device, fenceCount, fences, waitAll, timeout);
+        // Zero timeout = status query; exported fences are answered from their kept sync fd.
+        uint32_t signaled = 0;
+        VkResult result = VK_SUCCESS;
+        for (uint32_t i = 0; i < fenceCount && result >= 0; i++) {
+            VkResult status = FenceExport_status(&context->fenceExport, device, fences[i]);
+            if (status == VK_SUCCESS) signaled++;
+            else if (status < 0) result = status;
+        }
+        if (result >= 0) result = (waitAll ? signaled == fenceCount : signaled > 0) ? VK_SUCCESS : VK_TIMEOUT;
         vt_send(context->clientRing, result, NULL, 0);
         if (result == VK_ERROR_DEVICE_LOST) VkContext_reportError(context, "vkWaitForFences", result);
     }
@@ -2133,6 +2157,7 @@ void vt_handle_vkAcquireNextImageKHR(VkContext* context) {
     VkFence fence = VkObject_fromId(fenceId);
 
     uint32_t imageIndex = 0;
+    FenceExport_forget(&context->fenceExport, fence);
     VkResult result = XWindowSwapchain_acquireNextImage(swapchain, timeout, semaphore, fence, &imageIndex);
     if (result == VK_ERROR_DEVICE_LOST) VkContext_reportError(context, "vkAcquireNextImageKHR", result);
 
@@ -2461,6 +2486,7 @@ void vt_handle_vkAcquireNextImage2KHR(VkContext* context) {
     XWindowSwapchain* swapchain = (XWindowSwapchain*)acquireInfo.swapchain;
 
     uint32_t imageIndex = 0;
+    FenceExport_forget(&context->fenceExport, acquireInfo.fence);
     VkResult result = XWindowSwapchain_acquireNextImage(swapchain, acquireInfo.timeout, acquireInfo.semaphore, acquireInfo.fence, &imageIndex);
     if (result == VK_ERROR_DEVICE_LOST) VkContext_reportError(context, "vkAcquireNextImage2KHR", result);
 
@@ -3490,6 +3516,7 @@ void vt_handle_vkQueueSubmit2(VkContext* context) {
         }
     }
 
+    FenceExport_forget(&context->fenceExport, fence);
     if (result == VK_SUCCESS) result = vulkanWrapper.vkQueueSubmit2(queue, submitCount, submits, fence);
     context->submitCount++;
     if (result == VK_ERROR_DEVICE_LOST) VkContext_reportError(context, "vkQueueSubmit2", result);

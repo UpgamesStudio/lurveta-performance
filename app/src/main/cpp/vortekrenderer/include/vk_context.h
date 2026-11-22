@@ -7,6 +7,7 @@
 #include "async_pipeline_creator.h"
 #include "timeline_semaphore.h"
 #include "pipeline_cache.h"
+#include "fence_export.h"
 
 typedef struct VkContext {
     int clientFd;
@@ -58,6 +59,7 @@ typedef struct VkContext {
     volatile int64_t requestStartNanos;
     volatile int64_t requestEndNanos;
     pthread_t activityThread;
+    FenceExport fenceExport;          // LURVETA: real state of fences exported as SYNC_FD (see fence_export.h)
     int clientPid;                    // LURVETA: pid of the Vulkan client process (SO_PEERCRED), 0 if unknown
     char activityPath[160];
     bool errorReported;           // LURVETA: fatal error already logged and signalled to the client

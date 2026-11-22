@@ -20,3 +20,6 @@ ICD=/usr/share/vulkan/icd.d/lvp_icd.json
 
 echo; echo "### Persistent pipeline cache on lavapipe + validation"
 "$OUT/test_pipeline_cache_vk" "$OUT/spec.comp.spv"
+
+echo; echo "### Fence export semantics (mock driver following the Vulkan spec; original vs new algorithm)"
+"$OUT/test_fence_export"

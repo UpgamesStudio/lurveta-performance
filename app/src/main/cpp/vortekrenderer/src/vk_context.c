@@ -350,6 +350,7 @@ void destroyVkContext(JNIEnv* env, VkContext* context) {
     ArrayList_free(context->disabledDeviceExtensions, true);
     context->disabledDeviceExtensions = NULL;
 
+    FenceExport_free(&context->fenceExport);
     ArrayList_free(&context->extraDataRequests, true);
     pthread_mutex_destroy(&context->extraDataRequestsMutex);
 
