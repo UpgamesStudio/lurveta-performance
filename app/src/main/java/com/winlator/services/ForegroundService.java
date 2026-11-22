@@ -33,7 +33,7 @@ public class ForegroundService extends Service {
     private static volatile ForegroundService instance;
     private static final String TAG = "FGService";
 
-    private static final String ACTION_ENSURE_FOREGROUND = "com.winlator.action.ENSURE_FOREGROUND";
+    private static final String ACTION_ENSURE_FOREGROUND = com.winlator.BuildConfig.APPLICATION_ID + ".action.ENSURE_FOREGROUND";
 
     private static final AtomicBoolean sessionActive = new AtomicBoolean(false);
     private static final AtomicBoolean serviceRunning = new AtomicBoolean(false);

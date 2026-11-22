@@ -5,6 +5,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 
 import com.winlator.core.FileUtils;
+import com.winlator.core.PathRelocator;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,9 +25,9 @@ public class RootFS {
     }
 
     public static RootFS find(Context context) {
-        File legacyDir = new File(context.getFilesDir(), "imagefs");
-        File rootDir = new File(context.getFilesDir(), "rootfs");
-        if (legacyDir.isDirectory()) legacyDir.renameTo(rootDir);
+        // LURVETA: the rootfs lives in files/rtfs so that its absolute path has the same length as
+        // the upstream path compiled into the prebuilt binaries (see PathRelocator).
+        File rootDir = new File(context.getFilesDir(), PathRelocator.ROOTFS_DIR_NAME);
         return new RootFS(rootDir);
     }
 
