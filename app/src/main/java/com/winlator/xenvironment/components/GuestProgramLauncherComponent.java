@@ -13,6 +13,7 @@ import com.winlator.core.DefaultVersion;
 import com.winlator.core.EnvVars;
 import com.winlator.core.FileUtils;
 import com.winlator.core.GeneralComponents;
+import com.winlator.core.LaunchTrace;
 import com.winlator.core.LocaleHelper;
 import com.winlator.core.ProcessHelper;
 import com.winlator.widget.LogView;
@@ -38,6 +39,7 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
             extractBox64File();
             copyDefaultBox64RCFile();
             pid = execGuestProgram();
+            LaunchTrace.onExecResult(pid, ProcessHelper.getLastExecError());
         }
     }
 
@@ -107,7 +109,8 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
 
         String command = rootDir+"/usr/local/bin/box64 "+guestExecutable;
 
-        return ProcessHelper.exec(command, envVars, rootDir, (status) -> {
+        LaunchTrace.onPreExec(command, envVars, rootDir);
+        return ProcessHelper.exec(command, envVars, rootDir, LaunchTrace.currentOutputFile(), (status) -> {
             synchronized (lock) {
                 pid = -1;
             }

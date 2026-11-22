@@ -45,6 +45,7 @@ typedef struct VkContext {
     int textureUploadMode;        // LURVETA: TEXTURE_UPLOAD_MODE_* (texture_decoder.h)
     volatile bool shuttingDown;   // LURVETA: set by destroyVkContext; a normal shutdown is not an error
     int diagLines;
+    uint32_t presentCount;        // LURVETA: the first present is logged as a launch stage
     bool errorReported;           // LURVETA: fatal error already logged and signalled to the client
     bool persistentPipelineCache; // LURVETA: option "pipelineCache"
     PersistentPipelineCache* pipelineCache;

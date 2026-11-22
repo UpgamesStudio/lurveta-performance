@@ -63,6 +63,11 @@ static void setupExposedDeviceExtensions(VkContext* context) {
 void initVulkanInstance(VkContext* context, VkInstance instance, const VkApplicationInfo* applicationInfo) {
     VkResult result;
 
+    VkContext_logInfo(context, "STAGE instance-created: app '%s' engine '%s' (engine version 0x%x) requested Vulkan 0x%x",
+                      applicationInfo && applicationInfo->pApplicationName ? applicationInfo->pApplicationName : "-",
+                      applicationInfo && applicationInfo->pEngineName ? applicationInfo->pEngineName : "-",
+                      applicationInfo ? applicationInfo->engineVersion : 0, applicationInfo ? applicationInfo->apiVersion : 0);
+
     loadVulkanInstanceFuncs(&vulkanWrapper, instance);
 
     uint32_t physicalDeviceCount = 1;
@@ -145,7 +150,7 @@ void initVulkanDevice(VkContext* context, VkPhysicalDevice physicalDevice, VkDev
         VkPhysicalDeviceProperties deviceProps = {0};
         vulkanWrapper.vkGetPhysicalDeviceProperties(physicalDevice, &deviceProps);
         uint64_t capMb = ((uint64_t)context->maxDeviceMemory ? (uint64_t)context->maxDeviceMemory : (deviceMemoryInfo.maxAllocationSize >> 20));
-        VkContext_logInfo(context, "device '%s' vendor 0x%x driverID %d driverVersion 0x%x | native BC=%d | decoder=%s uploadMode=%d | pipelineCache=%d | engine=%s | alloc cap %llu MB (maxDeviceMemory option %d MB)",
+        VkContext_logInfo(context, "STAGE device-created: device '%s' vendor 0x%x driverID %d driverVersion 0x%x | native BC=%d | decoder=%s uploadMode=%d | pipelineCache=%d | engine=%s | alloc cap %llu MB (maxDeviceMemory option %d MB)",
                           deviceProps.deviceName, deviceProps.vendorID, (int)context->driverID, deviceProps.driverVersion, (int)supportedFeatures.textureCompressionBC,
                           context->textureDecoder ? "active" : "off", context->textureUploadMode, (int)context->persistentPipelineCache,
                           context->engineName ? context->engineName : "-", (unsigned long long)capMb, (int)context->maxDeviceMemory);

@@ -67,11 +67,30 @@ public abstract class ProcessHelper {
         return exec(command, envVars, workingDir, null);
     }
 
+    // LURVETA: reason why the last exec() could not start the process (upstream swallowed it silently).
+    private static volatile String lastExecError = null;
+
+    public static String getLastExecError() {
+        return lastExecError;
+    }
+
     public static int exec(String command, EnvVars envVars, File workingDir, Callback<Integer> terminationCallback) {
+        return exec(command, envVars, workingDir, null, terminationCallback);
+    }
+
+    /**
+     * LURVETA: when no debug callback is registered and outputFile is not null, stdout+stderr of the
+     * process are appended to that file by the OS (instead of /dev/null): no extra thread is needed.
+     */
+    public static int exec(String command, EnvVars envVars, File workingDir, File outputFile, Callback<Integer> terminationCallback) {
         int pid = -1;
+        lastExecError = null;
         try {
             ProcessBuilder processBuilder = (new ProcessBuilder(splitCommand(command))).directory(workingDir);
-            if (debugCallbacks.isEmpty()) processBuilder.redirectOutput(new File("/dev/null")).redirectErrorStream(true);
+            if (debugCallbacks.isEmpty()) {
+                if (outputFile != null) processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(outputFile)).redirectErrorStream(true);
+                else processBuilder.redirectOutput(new File("/dev/null")).redirectErrorStream(true);
+            }
 
             Map<String, String> environment = processBuilder.environment();
             for (String name : envVars) environment.put(name, envVars.get(name));
@@ -89,7 +108,9 @@ public abstract class ProcessHelper {
 
             if (terminationCallback != null) createWaitForThread(process, terminationCallback);
         }
-        catch (Exception e) {}
+        catch (Exception e) {
+            lastExecError = e.toString();
+        }
         return pid;
     }
 

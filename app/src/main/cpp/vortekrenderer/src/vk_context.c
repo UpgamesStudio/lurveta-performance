@@ -246,6 +246,8 @@ VkContext* createVkContext(JNIEnv* env, jobject obj, int clientFd, jobject optio
         return NULL;
     }
 
+    VkContext_logInfo(context, "STAGE client-connected (upload mode %d, pipeline cache %d)", context->textureUploadMode, (int)context->persistentPipelineCache);
+
     return context;
 }
 

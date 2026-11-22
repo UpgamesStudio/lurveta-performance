@@ -53,6 +53,7 @@ import com.winlator.core.GeneralComponents;
 import com.winlator.core.KeyValueSet;
 import com.winlator.core.LocaleHelper;
 import com.winlator.core.PreloaderDialog;
+import com.winlator.core.LaunchTrace;
 import com.winlator.core.ProcessHelper;
 import com.winlator.core.StringUtils;
 import com.winlator.core.TarCompressorUtils;
@@ -430,7 +431,52 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         return preferences;
     }
 
+    // ---- LURVETA: launch trace ---------------------------------------------------------------
+    private void startLaunchTrace(String guestExecutable) {
+        if (!LaunchTrace.isEnabled(preferences)) return;
+
+        String execPath = shortcut != null ? shortcut.path : getIntent().getStringExtra("exec_path");
+        String gameExe = "";
+        if (execPath != null) {
+            String normalized = execPath.replace('\\', '/').replace("\"", "");
+            gameExe = normalized.substring(normalized.lastIndexOf('/') + 1);
+            if (gameExe.toLowerCase().endsWith(".lnk")) gameExe = "";
+        }
+
+        java.util.List<String> description = new ArrayList<>();
+        description.add("launch: " + (shortcut != null ? "shortcut '" + shortcut.name + "' path " + shortcut.path : "exec_path/desktop " + execPath));
+        description.add("container: id " + container.id + " '" + container.getName() + "' | wine " + container.getWineVersion() + " | screen " + container.getScreenSize() + " | cpu list " + container.getCPUList());
+        description.add("graphics driver: " + container.getGraphicsDriver() + " | config: " + container.getGraphicsDriverConfig());
+        description.add("effective: vulkan driver " + graphicsDriver[0] + ", opengl driver " + graphicsDriver[1] + ", dxwrapper " + dxwrapper);
+        description.add("dxwrapper config: " + container.getDXWrapperConfig());
+        description.add("audio: " + audioDriver + " | win components: " + container.getWinComponents());
+        description.add("box64 preset: " + (shortcut != null ? shortcut.getExtra("box64Preset", container.getBox64Preset()) : container.getBox64Preset()));
+        description.add("rootfs version: " + rootFS.getVersion() + " | rootfs dir: " + rootFS.getRootDir());
+        description.add("guest executable: " + guestExecutable);
+
+        LaunchTrace trace = LaunchTrace.begin(this, shortcut != null ? shortcut.name : container.getName(), gameExe, description);
+        if (trace == null) return;
+
+        // Logging defaults for the trace. They only change what is PRINTED (never behaviour), and never
+        // override a value the user or the container set on purpose.
+        String dxvkLevel = envVars.get("DXVK_LOG_LEVEL");
+        if (dxvkLevel == null || dxvkLevel.isEmpty() || dxvkLevel.equals("none")) envVars.put("DXVK_LOG_LEVEL", "info");
+        if (!envVars.has("DXVK_LOG_PATH")) {
+            File dxvkLogDir = new File(container.getRootDir(), ".wine/drive_c/lurveta-logs");
+            if (dxvkLogDir.isDirectory() || dxvkLogDir.mkdirs()) {
+                envVars.put("DXVK_LOG_PATH", "C:\\lurveta-logs");
+                trace.setDxvkLogDir(dxvkLogDir);
+            }
+        }
+        if ("-all".equals(envVars.get("WINEDEBUG"))) envVars.put("WINEDEBUG", "fixme-all");   // keep Wine's err: lines
+        if (!envVars.has("BOX64_LOG") && preferences.getInt("box64_logs", 0) == 0) {
+            envVars.put("BOX64_LOG", "1");
+            envVars.put("BOX64_NOBANNER", "0");
+        }
+    }
+
     private void exit() {
+        LaunchTrace.endByUser();
         stopBenchmark();
         winHandler.stop();
         if (environment != null) environment.stopEnvironmentComponents();
@@ -523,6 +569,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             if (!envVars.has("WINEESYNC")) envVars.put("WINEESYNC", "1");
 
             guestProgramLauncherComponent.setBox64Preset(shortcut != null ? shortcut.getExtra("box64Preset", container.getBox64Preset()) : container.getBox64Preset());
+            startLaunchTrace(guestExecutable);
         }
 
         environment = new XEnvironment(this, rootFS);
@@ -563,7 +610,11 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         }
 
         guestProgramLauncherComponent.setEnvVars(envVars);
-        guestProgramLauncherComponent.setTerminationCallback((status) -> exit());
+        // LURVETA: the report with the exit code is written BEFORE returning to the menu.
+        guestProgramLauncherComponent.setTerminationCallback((status) -> {
+            LaunchTrace.end(status);
+            exit();
+        });
         environment.addComponent(guestProgramLauncherComponent);
 
         if (isGenerateWineprefix()) {

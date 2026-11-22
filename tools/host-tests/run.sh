@@ -29,3 +29,8 @@ mkdir -p "$T/samplers"
 
 echo "== Benchmark analysis metrics (synthetic logs with known answers)"
 python3 -I "$ROOT/tools/host-tests/analyze_test.py"
+
+echo "== Launch analysis (verdict for each point where a launch can stop)"
+mkdir -p "$T/la"
+"$JAVAC" -d "$T/la" "$ROOT/app/src/main/java/com/winlator/core/LaunchAnalysis.java" "$ROOT/tools/host-tests/LaunchAnalysisTest.java"
+"$JAVARUN" -cp "$T/la" LaunchAnalysisTest

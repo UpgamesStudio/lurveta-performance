@@ -13,6 +13,13 @@ Objetivo: aislar y corregir la regresión de arranque de GTA IV/GTA V. **No se d
 - El cierre normal de una sesión ya no registra un «FATAL» falso en `vortek-errors.log` (y el benchmark deja de contarlo como fallo). **[V‑código]**
 - `vkGetPhysicalDeviceImageFormatProperties` para BC vuelve a no ser más estricto que 1.0.0: responde el driver con el formato descomprimido. **[V‑código]**
 
+### Captura de arranque (nuevo)
+- Cada lanzamiento genera `Download/LURVETA/logs/launch-latest.txt`: etapas alcanzadas (Box64, Wine, explorer, proceso del juego, conexión/instancia/dispositivo Vulkan, primer fotograma), **código de salida o señal**, tiempo, veredicto y evidencia (procesos, entorno exacto, salida de Box64/Wine, log de DXVK, fallos Vulkan). Antes la salida iba a `/dev/null`, los errores de `exec` se ignoraban y la app volvía al menú sin avisar (comportamiento heredado de 11.2).
+- Si el arranque termina de forma inesperada, el menú lo avisa con el veredicto.
+- Solo cambia lo que se **imprime**: `DXVK_LOG_LEVEL=info` (si estaba en `none`), `WINEDEBUG=fixme-all` (si estaba en `-all`, conserva los `err:`) y `BOX64_LOG=1`; nunca sobrescribe valores puestos por el usuario. Se puede desactivar con la preferencia `lurveta_launch_trace`.
+- **[V‑host]** la lógica del veredicto (cada punto de parada → diagnóstico correcto). **No probado en dispositivo** la captura en sí.
+- `docs/DIFERENCIAS_CON_WINLATOR_11_2.md`: comparación del camino de arranque con 11.2 (verificado: rutas reubicadas sin restos).
+
 ### Diagnóstico (nuevo)
 - `files/logs/vortek-diagnostics.log`: resumen del dispositivo al arrancar y una línea por cada llamada Vulkan que falla (memoria con tamaños y tope, imágenes, buffers, vistas, pipelines…). Límite de 200 líneas por sesión; sin coste si todo va bien. El benchmark cuenta estos fallos (`vulkan_call_failures`, `events.csv`).
 - Interruptor Vortek › **Emular BC6H/BC7** (por defecto activado): desactivado reproduce el comportamiento de 1.0.0. Junto con el modo de subida BC y la caché de pipelines, permite aislar la regresión sin cambiar de APK (`docs/PRUEBAS_GTA.md`).

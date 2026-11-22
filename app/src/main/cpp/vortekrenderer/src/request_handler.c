@@ -2142,6 +2142,7 @@ void vt_handle_vkQueuePresentKHR(VkContext* context) {
     for (int i = 0; i < presentInfo.swapchainCount; i++) {
         XWindowSwapchain_presentImage((XWindowSwapchain*)presentInfo.pSwapchains[i]);
     }
+    if (context->presentCount++ == 0) VkContext_logInfo(context, "STAGE first-present");
 }
 
 void vt_handle_vkGetPhysicalDeviceFeatures2(VkContext* context) {

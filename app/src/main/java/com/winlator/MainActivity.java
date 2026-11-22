@@ -89,6 +89,22 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 showFragment(new ContainerFileManagerFragment(containerId, startPath));
             }
         }
+
+        showPendingLaunchNotice();
+    }
+
+    // LURVETA: a launch that ended unexpectedly used to return to the menu without a word.
+    private void showPendingLaunchNotice() {
+        final String notice = com.winlator.core.LaunchTrace.takePendingNotice(this);
+        if (notice == null) return;
+        getWindow().getDecorView().post(() -> {
+            if (isFinishing()) return;
+            new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("El último arranque terminó de forma inesperada")
+                .setMessage(notice)
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
+        });
     }
 
     @Override
