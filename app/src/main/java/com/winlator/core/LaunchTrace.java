@@ -80,9 +80,6 @@ public final class LaunchTrace {
     private final Map<Integer, Long> lastThreadTicks = new HashMap<>();
     private final Map<Integer, Long> lastProcessTicks = new HashMap<>();
     private long lastProbeNanos = 0;
-    private long lastActivityNoteNanos = 0;
-    private String lastActivity = null;
-    private String lastActivityKey = null;
     private final List<String> probeSummary = new ArrayList<>();
     private static final long CLOCK_TICKS = clockTicks();
 
@@ -276,13 +273,25 @@ public final class LaunchTrace {
         }
     }
 
+    private static final String[] WINE_SYSTEM_EXES = {"explorer.exe", "services.exe", "winedevice.exe", "plugplay.exe", "svchost.exe", "rpcss.exe",
+        "conhost.exe", "start.exe", "winhandler.exe", "wfm.exe", "wineboot.exe", "winemenubuilder", "rundll32.exe", "cmd.exe", "tabtip.exe", "taskmgr.exe"};
+
+    /** True for the game's process: the known executable, or (launched from the desktop) any non-system .exe. */
+    private boolean isGameProcess(String text) {
+        if (!gameExe.isEmpty()) {
+            String shortName = gameExe.length() > 15 ? gameExe.substring(0, 15) : gameExe;   // Linux comm is 15 chars
+            return text.startsWith(shortName) || text.contains(gameExe);
+        }
+        String comm = text.split(" ")[0];
+        if (!comm.endsWith(".exe") && !(comm.length() == 15 && comm.contains(".ex"))) return false;
+        for (String system : WINE_SYSTEM_EXES) if (comm.startsWith(system.length() > 15 ? system.substring(0, 15) : system)) return false;
+        return true;
+    }
+
     private void classify(String text) {
         if (text.contains("wineserver") || text.contains("wine")) stage(LaunchAnalysis.STAGE_WINE_RUNNING, null);
         if (text.contains("explorer")) stage(LaunchAnalysis.STAGE_EXPLORER, null);
-        if (!gameExe.isEmpty()) {
-            String shortName = gameExe.length() > 15 ? gameExe.substring(0, 15) : gameExe;   // Linux comm is 15 chars
-            if (text.startsWith(shortName) || text.contains(gameExe)) stage(LaunchAnalysis.STAGE_GAME_PROCESS, null);
-        }
+        if (isGameProcess(text)) stage(LaunchAnalysis.STAGE_GAME_PROCESS, text.split(" ")[0]);
     }
 
     /** Vortek writes "STAGE ..." lines into files/logs/vortek-diagnostics.log (see VkContext_logInfo). */
@@ -306,30 +315,70 @@ public final class LaunchTrace {
     }
 
     /** files/logs/vortek-activity.txt, rewritten every 2 s by Vortek's watchdog thread. */
-    private void sampleActivity() {
-        File file = new File(context.getFilesDir(), "logs/vortek-activity.txt");
-        if (!file.isFile() || file.lastModified() / 1000 < startEpochSeconds - 1) return;
-        String line;
-        try {
-            line = readSmall(file.getPath()).trim();
-        }
-        catch (IOException e) {
-            return;
-        }
-        int space = line.indexOf(' ');
-        if (space < 0) return;
-        String body = line.substring(space + 1);
-        lastActivity = body;
+    private static final class ClientActivity {
+        String body;
+        String key;
+        long lastNoteNanos;
+        long fpsPresents = -1;
+        long fpsNanos;
+        String fps = "";
+        double maxFps = 0;
+    }
+    private final Map<Integer, ClientActivity> clients = new TreeMap<>();
 
-        // Note it when the state changes (ignoring the moving idle/for counters) and every 15 s.
-        String key = body.replaceAll("(idleMs|forMs)=-?\\d+", "").replaceAll("requests=\\d+", "");
+    /** files/logs/vortek-activity-<pid>.txt, one per Vulkan client, rewritten every 2 s by Vortek. */
+    private void sampleActivity() {
+        File[] files = new File(context.getFilesDir(), "logs").listFiles((d, n) -> n.startsWith("vortek-activity-") && n.endsWith(".txt"));
+        if (files == null) return;
         long now = System.nanoTime();
-        boolean stuck = body.contains("state=IN_CALL") && parseMs(body, "forMs=") >= 5000;
-        if (!key.equals(lastActivityKey) || now - lastActivityNoteNanos >= 15_000_000_000L || stuck && now - lastActivityNoteNanos >= 5_000_000_000L) {
-            note("vortek: " + body + (stuck ? "   <-- SERVER BLOCKED INSIDE THIS VULKAN CALL" : ""));
-            lastActivityKey = key;
-            lastActivityNoteNanos = now;
+        for (File file : files) {
+            if (file.lastModified() / 1000 < startEpochSeconds - 1) continue;
+            String line;
+            try {
+                line = readSmall(file.getPath()).trim();
+            }
+            catch (IOException e) {
+                continue;
+            }
+            int space = line.indexOf(' ');
+            if (space < 0) continue;
+            String body = line.substring(space + 1);
+            int pid = (int)parseMs(body, "pid=");
+            ClientActivity client = clients.get(pid);
+            if (client == null) clients.put(pid, client = new ClientActivity());
+            client.body = body;
+
+            // Frames per second from the present counter (over >= 4 s windows).
+            long presents = parseMs(body, "presents=");
+            if (client.fpsPresents < 0 || presents < client.fpsPresents) {
+                client.fpsPresents = presents;
+                client.fpsNanos = now;
+            }
+            else if (now - client.fpsNanos >= 4_000_000_000L) {
+                double fps = (presents - client.fpsPresents) / ((now - client.fpsNanos) / 1e9);
+                client.maxFps = Math.max(client.maxFps, fps);
+                client.fps = String.format(Locale.ENGLISH, " | ~%.1f fps (presents/s, last %.0f s)", fps, (now - client.fpsNanos) / 1e9);
+                client.fpsPresents = presents;
+                client.fpsNanos = now;
+            }
+
+            // Note it when the state changes (ignoring moving counters) and every 15 s.
+            String key = body.replaceAll("(idleMs|forMs|requests|submits|presents|images|allocMB)=-?\\d+", "");
+            boolean stuck = body.contains("state=IN_CALL") && parseMs(body, "forMs=") >= 5000;
+            if (!key.equals(client.key) || now - client.lastNoteNanos >= 15_000_000_000L || stuck && now - client.lastNoteNanos >= 5_000_000_000L) {
+                note("vortek[" + clientName(pid) + "]: " + body + client.fps + (stuck ? "   <-- SERVER BLOCKED INSIDE THIS VULKAN CALL" : ""));
+                client.key = key;
+                client.lastNoteNanos = now;
+            }
         }
+    }
+
+    private String clientName(int pid) {
+        String name;
+        synchronized (this) {
+            name = everSeen.get(pid);
+        }
+        return pid + (name != null ? " " + name.split(" ")[0] : "");
     }
 
     private static long parseMs(String text, String key) {
@@ -352,9 +401,7 @@ public final class LaunchTrace {
         synchronized (this) {
             for (Map.Entry<Integer, String> e : lastProcesses.entrySet()) {
                 String text = e.getValue().toLowerCase(Locale.ROOT);
-                String shortName = gameExe.length() > 15 ? gameExe.substring(0, 15) : gameExe;
-                boolean isGame = !gameExe.isEmpty() && (text.startsWith(shortName) || text.contains(gameExe));
-                if (isGame || text.contains("browser")) targets.add(e.getKey());
+                if (isGameProcess(text) || text.contains("browser")) targets.add(e.getKey());
             }
         }
 
@@ -461,12 +508,26 @@ public final class LaunchTrace {
         sb.append("\n--- RESULT ---\n");
         sb.append("state: ").append(exited ? "ended, " + LaunchAnalysis.describeExit(exitStatus) : "running").append('\n');
         int last = LaunchAnalysis.lastStage(reached);
+        synchronized (this) {
+            List<String> games = new ArrayList<>();
+            for (String p : everSeen.values()) {
+                String name = p.split(" ")[0];
+                if (isGameProcess(p.toLowerCase(Locale.ROOT)) && !games.contains(name)) games.add(name);
+            }
+            sb.append("game process(es) detected: ").append(games.isEmpty() ? "none" : String.join(", ", games)).append('\n');
+        }
         sb.append("last stage reached: ").append(last >= 0 ? last + " — " + LaunchAnalysis.stageName(last) : "none").append('\n');
         sb.append("stages: ");
         for (int i = 0; i < reached.length; i++) sb.append(i).append(reached[i] ? "=yes " : "=NO ");
         sb.append('\n');
         sb.append("verdict (heuristic): ").append(LaunchAnalysis.verdict(execError, reached, exited, exitStatus, elapsedMs)).append('\n');
-        sb.append("vortek activity (last): ").append(lastActivity != null ? lastActivity : "no Vulkan client connected yet").append('\n');
+        synchronized (this) {
+            if (clients.isEmpty()) sb.append("vortek activity: no Vulkan client connected yet\n");
+            for (Map.Entry<Integer, ClientActivity> e : clients.entrySet()) {
+                sb.append("vortek client ").append(clientName(e.getKey())).append(" (last): ").append(e.getValue().body).append(e.getValue().fps)
+                  .append(String.format(Locale.ENGLISH, " | best window ~%.1f fps", e.getValue().maxFps)).append('\n');
+            }
+        }
         synchronized (this) {
             if (!probeSummary.isEmpty()) {
                 sb.append("game process probe (latest samples):\n");
@@ -527,7 +588,12 @@ public final class LaunchTrace {
         write(new File(dir, "launch-latest.txt"), report);
         File downloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
         File publicDir = new File(downloads, "LURVETA/logs");
-        if (publicDir.isDirectory() || publicDir.mkdirs()) write(new File(publicDir, "launch-latest.txt"), report);
+        if (publicDir.isDirectory() || publicDir.mkdirs()) {
+            write(new File(publicDir, "launch-latest.txt"), report);
+            // One file per launch too, so the report of one game is not overwritten by the next launch.
+            String stamp = new java.text.SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(new java.util.Date(startEpochSeconds * 1000));
+            write(new File(publicDir, "launch-" + stamp + ".txt"), report);
+        }
     }
 
     private static void write(File file, String content) {

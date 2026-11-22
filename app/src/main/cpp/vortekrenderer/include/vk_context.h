@@ -58,6 +58,8 @@ typedef struct VkContext {
     volatile int64_t requestStartNanos;
     volatile int64_t requestEndNanos;
     pthread_t activityThread;
+    int clientPid;                    // LURVETA: pid of the Vulkan client process (SO_PEERCRED), 0 if unknown
+    char activityPath[160];
     bool errorReported;           // LURVETA: fatal error already logged and signalled to the client
     bool persistentPipelineCache; // LURVETA: option "pipelineCache"
     PersistentPipelineCache* pipelineCache;

@@ -20,6 +20,13 @@ Objetivo: aislar y corregir la regresión de arranque de GTA IV/GTA V. **No se d
 - **[V‑host]** la lógica del veredicto (cada punto de parada → diagnóstico correcto). **No probado en dispositivo** la captura en sí.
 - `docs/DIFERENCIAS_CON_WINLATOR_11_2.md`: comparación del camino de arranque con 11.2 (verificado: rutas reubicadas sin restos).
 
+### Captura: correcciones tras el primer informe real (GTA IV en el Dimensity 8350)
+- Cada cliente Vulkan escribe su propio archivo de actividad (`vortek-activity-<pid>.txt`); antes compartían uno y el informe mezclaba el escritorio de Wine con el juego.
+- FPS estimados por cliente a partir de las presentaciones (último tramo y mejor tramo).
+- Juegos lanzados desde el escritorio: se detecta cualquier `.exe` que no sea de Wine y se muestrean sus hilos.
+- Cada lanzamiento deja además `Download/LURVETA/logs/launch-<fecha>.txt`, que no se sobrescribe; el informe indica el proceso de juego detectado.
+- **[V‑host]** ejecutado en Linux: dos clientes, FPS estimados, juego lanzado desde el escritorio.
+
 ### Sondas para pantallas negras (nuevo)
 - Vortek escribe cada 2 s `files/logs/vortek-activity.txt` (desde un hilo vigía): peticiones, envíos, presentaciones, swapchains, imágenes, memoria y **la llamada Vulkan en curso y desde hace cuánto**; el informe marca `SERVER BLOCKED INSIDE THIS VULKAN CALL` si dura más de 5 s.
 - El informe muestrea cada 5 s los hilos del proceso del juego y de sus procesos auxiliares (p. ej. `gta4Browser.exe`): CPU por hilo, estados y memoria, para distinguir bloqueo de ejecución.

@@ -14,6 +14,28 @@
 | Estabilidad | Sin datos | Sin datos |
 | Rendimiento | Sin mediciones | Sin mediciones |
 
+## Evidencia real del Dimensity 8350 (informe del 22‑11‑2026, 1.1.1‑dev, release)
+
+Primera prueba con captura de arranque. Juego: «GTA IV LITE V3 By OptiJuegos», lanzado desde el gestor de archivos de Wine. Contenedor: Vortek + DXVK 1.10.3, preset de Box64 PERFORMANCE, 1280×720, audio ALSA.
+
+| Hecho medido | Valor |
+|---|---|
+| Entorno (Box64, Wine, escritorio) | Arranca en ~1 s |
+| `GTAIV.exe` creado | T+14 s |
+| DXVK inicializado (instancia y dispositivo Vulkan en Mali‑G615) | T+17 s. Heap anunciado: 7615 MiB |
+| Primer fotograma | T+27 s |
+| Presentaciones por segundo (estimadas con los contadores de Vortek) | ~180–250/s entre T+28 y T+39 s; media ~206/s entre T+39 y T+113 s; 56–181/s (media ~107/s) entre T+113 y T+133 s. **No se sabe qué pantalla se veía** (menú, carga o juego) |
+| Carga de recursos | Imágenes 2141→4563 y memoria 752→1280 MB entre T+113 y T+135 s |
+| Fallos de llamadas Vulkan / errores fatales | 0 / 0 |
+| `gta4Browser.exe` | **~45–54 % de un núcleo de forma continua durante toda la sesión** (un solo hilo, 59 MB) |
+| Después de T+135 s | La conexión Vulkan del juego deja de informar, pero `GTAIV.exe` no termina antes del final de la captura (172 s). Con la sonda anterior no se puede saber si el juego se cerró, se colgó o fuiste tú (ver «Defectos de la sonda») |
+
+**Defectos de la sonda en ese informe, corregidos en 1.1.1‑dev4:** todas las conexiones Vulkan escribían el mismo archivo de actividad (por eso el informe alterna con un cliente inactivo de 42 peticiones). Además, al lanzar desde el escritorio no se sabía cuál era el ejecutable del juego y no se muestrearon los hilos de `GTAIV.exe`.
+
+**Pendiente de aclarar para GTA IV:** qué FPS hay realmente *en juego* y si el corte a T+135 s es un cuelgue. Prueba A/B sin tocar archivos del juego: con el juego ya en marcha, cerrar `gta4Browser.exe` desde el administrador de tareas y comparar los FPS (benchmark del menú del juego).
+
+**GTA V: todavía no hay ningún informe.** El archivo recibido como «GTA V» era de GTA IV.
+
 ## Qué se ha investigado y qué se sabe
 
 **Probado (host, no Mali)**
