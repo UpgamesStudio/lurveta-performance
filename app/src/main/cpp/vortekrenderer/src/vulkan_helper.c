@@ -137,9 +137,11 @@ void initVulkanDevice(VkContext* context, VkPhysicalDevice physicalDevice, VkDev
     VkPhysicalDeviceFeatures supportedFeatures = {0};
     vulkanWrapper.vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
 
+    // LURVETA: the decoder owns objects of ONE device (staging buffers, command pool, fences) and is
+    // released in vkDestroyDevice; another device created meanwhile is not routed through it.
     if (!context->textureDecoder) context->textureDecoder = TextureDecoder_create(context, physicalDevice, device, &supportedFeatures);
     if (!context->shaderInspector) context->shaderInspector = ShaderInspector_create(context, physicalDevice, &supportedFeatures);
-    if (context->textureDecoder) context->textureDecoder->threadPool = context->threadPool;
+    if (!context->pipelineCache && context->persistentPipelineCache) context->pipelineCache = PersistentPipelineCache_create(physicalDevice, device);
 }
 
 uint32_t getMemoryTypeIndex(uint32_t typeBits, VkFlags properties) {
@@ -373,24 +375,52 @@ VkExtensionProperties* getExposedDeviceExtensionProperties(VkContext* context, V
     return dstProperties;
 }
 
+/*
+ * LURVETA: BC formats the GPU cannot sample are emulated by the texture decoder. Their features are
+ * those of the decoded format, restricted to what a block-compressed image may legally expose
+ * (no attachments, no storage, no linear tiling, no buffer views). ETC2/EAC/ASTC are native on Mali
+ * and are never altered; if the driver lacks them they stay unsupported (no decoder for them).
+ */
+#define EMULATED_BC_FORMAT_FEATURES (VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT | \
+    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT | VK_FORMAT_FEATURE_BLIT_SRC_BIT | \
+    VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT)
+#define EMULATED_BC_IMAGE_USAGE (VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
+
 void checkFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format, VkFormatProperties* formatProperties) {
-    if (isCompressedFormat(format) && formatProperties->linearTilingFeatures == 0 && formatProperties->optimalTilingFeatures == 0) {
-        vulkanWrapper.vkGetPhysicalDeviceFormatProperties(physicalDevice, TextureDecoder_getDecompressedFormat(format), formatProperties);
+    if (TextureDecoder_canDecodeFormat(format) && formatProperties->linearTilingFeatures == 0 && formatProperties->optimalTilingFeatures == 0) {
+        VkFormatProperties decodedProperties = {0};
+        vulkanWrapper.vkGetPhysicalDeviceFormatProperties(physicalDevice, TextureDecoder_getDecompressedFormat(format), &decodedProperties);
+        formatProperties->linearTilingFeatures = 0;
+        formatProperties->optimalTilingFeatures = decodedProperties.optimalTilingFeatures & EMULATED_BC_FORMAT_FEATURES;
+        formatProperties->bufferFeatures = 0;
     }
     else if (isFormatScaled(format)) {
         formatProperties->bufferFeatures |= VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT;
     }
 }
 
-void checkImageFormatProperties(VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags, VkImageFormatProperties* imageFormatProperties, VkResult* result) {
+void checkImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags, VkImageFormatProperties* imageFormatProperties, VkResult* result) {
     if (tiling == VK_IMAGE_TILING_LINEAR && type == VK_IMAGE_TYPE_2D && format == VK_FORMAT_R8G8B8A8_UNORM &&
         usage == (VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
         imageFormatProperties->sampleCounts = VK_SAMPLE_COUNT_8_BIT;
         *result = VK_SUCCESS;
     }
 
-    if (*result == VK_ERROR_FORMAT_NOT_SUPPORTED && isCompressedFormat(format)) {
-        *result = getCompressedImageFormatProperties(format, imageFormatProperties);
+    if (*result == VK_ERROR_FORMAT_NOT_SUPPORTED && TextureDecoder_canDecodeFormat(format)) {
+        // The decoder writes optimal-tiled decoded images through transfer copies only.
+        if (tiling != VK_IMAGE_TILING_OPTIMAL || (usage & ~EMULATED_BC_IMAGE_USAGE)) return;
+
+        VkImageCreateFlags decodedFlags = flags & ~(VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT);
+        VkImageFormatProperties decodedProperties = {0};
+        VkResult decodedResult = vulkanWrapper.vkGetPhysicalDeviceImageFormatProperties(physicalDevice, TextureDecoder_getDecompressedFormat(format), type, tiling, usage, decodedFlags, &decodedProperties);
+        if (decodedResult != VK_SUCCESS) {
+            *result = decodedResult;
+            return;
+        }
+
+        decodedProperties.sampleCounts = VK_SAMPLE_COUNT_1_BIT;
+        *imageFormatProperties = decodedProperties;
+        *result = VK_SUCCESS;
     }
 }
 

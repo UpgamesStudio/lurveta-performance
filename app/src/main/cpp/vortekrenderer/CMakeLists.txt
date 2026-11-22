@@ -18,6 +18,7 @@ add_library(vortekrenderer SHARED
             src/texture_decoder.c
             src/shader_inspector.c
             src/async_pipeline_creator.c
+            src/pipeline_cache.c
             src/timeline_semaphore.c)
 
 target_link_libraries(vortekrenderer

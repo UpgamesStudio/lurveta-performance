@@ -16,3 +16,16 @@ gcc "${FLAGS[@]}" -c "$C/vortekrenderer/src/texture_decoder.c" -o "$T/td.o"
 gcc -std=gnu11 -g -O1 -fsanitize=address,undefined -I "$C/winlator/include" -c "$C/winlator/src/arrays.c" -o "$T/arrays.o"
 gcc "${FLAGS[@]}" "$ROOT/tools/host-tests/texture_decoder_test.c" "$T/td.o" "$T/arrays.o" -o "$T/td" -ldl -lpthread
 ASAN_OPTIONS=detect_leaks=0 "$T/td"
+
+echo "== Vortek host tests (inline uploads, BC1-BC7 reference, pipeline cache)"
+"$ROOT/tools/vortek-host-tests/run_tests.sh" "$T/vortek"
+
+echo "== Benchmark samplers (ProcessSampler on the real /proc, GpuSampler fallback)"
+JAVAC="${JAVA_HOME:+$JAVA_HOME/bin/}javac"; JAVARUN="${JAVA_HOME:+$JAVA_HOME/bin/}java"
+mkdir -p "$T/samplers"
+"$JAVAC" -d "$T/samplers" "$ROOT"/tools/host-tests/stub-java/android/os/Process.java "$ROOT"/tools/host-tests/stub-java/android/system/*.java \
+    "$ROOT/app/src/main/java/com/winlator/core/ProcessSampler.java" "$ROOT/app/src/main/java/com/winlator/core/GpuSampler.java" "$ROOT/tools/host-tests/SamplersTest.java"
+"$JAVARUN" -cp "$T/samplers" SamplersTest
+
+echo "== Benchmark analysis metrics (synthetic logs with known answers)"
+python3 -I "$ROOT/tools/host-tests/analyze_test.py"

@@ -1,0 +1,7 @@
+bcdec.h — https://github.com/iOrange/bcdec (MIT or Unlicense, see bcdec.LICENSE)
+Used by bc_decoder.h for BC6H and BC7 decoding only.
+
+Local modification (one line, marked "LURVETA"):
+  bcdec__extend_sign(): the left shift is done on an unsigned value; the upstream version shifts a
+  signed int into its sign bit, which is undefined behaviour in C (reported by UBSan in
+  tools/vortek-host-tests). The result is identical on every two's-complement target.

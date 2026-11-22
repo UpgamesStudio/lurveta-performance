@@ -3,8 +3,18 @@
 // Previously BC4/BC5 were written into byte 0/1 of a BGRA texel (i.e. the BLUE/GREEN channels),
 // leaving the other bytes with stale data from earlier decodes.
 
+// LURVETA: BC6H (-> RGBA16F) and BC7 (-> RGBA8) are decoded with bcdec (third_party/bcdec.h, MIT),
+// and multi-threaded decodes wait on their own TaskGroup instead of the whole thread pool.
+
 #ifndef BC_DECODER_H
 #define BC_DECODER_H
+
+#include "task_group.h"
+#ifndef BCDEC_IMPLEMENTATION
+#define BCDEC_STATIC
+#define BCDEC_IMPLEMENTATION
+#endif
+#include "third_party/bcdec.h"
 
 #define BC_BLOCK 4u
 #define BC_DECODER_MAX_TASKS 8
@@ -27,6 +37,7 @@ typedef struct BCTask {
     uint8_t bpp;
     bool isAlpha;
     bool isSigned;
+    TaskGroup* group;
 } BCTask;
 
 static inline uint32_t BCDecoder_getColorIdx(const BCColor* color, int i) {
@@ -131,11 +142,54 @@ static inline void BCDecoder_decodeColor(const BCColor* color, uint8_t* dst, int
     }
 }
 
+/* BC6H: bcdec writes RGB halfs (pitch in halfs); expand to RGBA16F with alpha = 1.0. */
+static inline void BCDecoder_decodeBC6HBlock(const uint8_t* block, uint8_t* dstRow, int x, int y, int width, int endY, int stride, bool isSigned) {
+    uint16_t rgb[BC_BLOCK * BC_BLOCK * 3];
+    bcdec_bc6h_half(block, rgb, BC_BLOCK * 3, isSigned);
+    for (int j = 0; j < BC_BLOCK && (y + j) < endY; j++) {
+        uint16_t* dst = (uint16_t*)(dstRow + j * stride);
+        const uint16_t* src = rgb + j * BC_BLOCK * 3;
+        for (int i = 0; i < BC_BLOCK && (x + i) < width; i++) {
+            dst[i * 4 + 0] = src[i * 3 + 0];
+            dst[i * 4 + 1] = src[i * 3 + 1];
+            dst[i * 4 + 2] = src[i * 3 + 2];
+            dst[i * 4 + 3] = 0x3C00;
+        }
+    }
+}
+
+/* BC7: full blocks are decoded in place, edge blocks through a temporary 4x4 RGBA8 block. */
+static inline void BCDecoder_decodeBC7Block(const uint8_t* block, uint8_t* dstRow, int x, int y, int width, int endY, int stride) {
+    if ((x + BC_BLOCK) <= width && (y + BC_BLOCK) <= endY) {
+        bcdec_bc7(block, dstRow, stride);
+        return;
+    }
+    uint8_t rgba[BC_BLOCK * BC_BLOCK * 4];
+    bcdec_bc7(block, rgba, BC_BLOCK * 4);
+    for (int j = 0; j < BC_BLOCK && (y + j) < endY; j++) {
+        int count = MIN((int)BC_BLOCK, width - x);
+        memcpy(dstRow + j * stride, rgba + j * BC_BLOCK * 4, count * 4);
+    }
+}
+
 static inline void BCDecoder_decodeThread(void* param) {
     BCTask* task = param;
     const int stride = task->width * task->bpp;
     const int dx = task->bpp * BC_BLOCK;
     const int dy = stride * BC_BLOCK;
+
+    if (task->bcN == 6 || task->bcN == 7) {
+        const uint8_t* block = task->src;
+        for (int x, y = task->startY; y < task->endY; y += BC_BLOCK, task->dst += dy) {
+            uint8_t* dstRow = task->dst;
+            for (x = 0; x < task->width; x += BC_BLOCK, block += 16, dstRow += dx) {
+                if (task->bcN == 6) BCDecoder_decodeBC6HBlock(block, dstRow, x, y, task->width, task->endY, stride, task->isSigned);
+                else BCDecoder_decodeBC7Block(block, dstRow, x, y, task->width, task->endY, stride);
+            }
+        }
+        if (task->group) TaskGroup_done(task->group);
+        return;
+    }
 
     switch (task->bcN) {
         case 1: {
@@ -195,24 +249,38 @@ static inline void BCDecoder_decodeThread(void* param) {
             break;
         }
     }
+    if (task->group) TaskGroup_done(task->group);
 }
 
+/* Bytes per decoded texel: BC1-3 BGRA8, BC4 R8, BC5 RG8, BC6H RGBA16F, BC7 RGBA8. */
 static inline int BCDecoder_getOutputTexelSize(int bcN) {
-    return bcN == 4 ? 1 : (bcN == 5 ? 2 : 4);
+    switch (bcN) {
+        case 4: return 1;
+        case 5: return 2;
+        case 6: return 8;
+        default: return 4;
+    }
 }
 
 static inline void BCDecoder_decode(const uint8_t* src, uint8_t* dst, int width, int height, int bcN, bool isNoAlphaU, ThreadPool* threadPool) {
     const bool isAlpha = (bcN == 1) && !isNoAlphaU;
-    const bool isSigned = (bcN == 4 || bcN == 5) && !isNoAlphaU;
+    const bool isSigned = (bcN == 4 || bcN == 5 || bcN == 6) && !isNoAlphaU;
     const int bpp = BCDecoder_getOutputTexelSize(bcN);
     const int stride = width * bpp;
     const int dy = stride * BC_BLOCK;
     const int skipWidth = BC_ROUNDUP(width) / BC_BLOCK;
-    const int blockSize = bcN == 1 ? 8 : 16;
+    // LURVETA: BC1 and BC4 use 8-byte blocks (upstream used 16 for BC4, so every task after the first
+    // read the wrong rows and, near the end of the texture, past the end of the source buffer).
+    const int blockSize = (bcN == 1 || bcN == 4) ? 8 : 16;
 
     int minTasks = height >= 256 ? BC_DECODER_MAX_TASKS : BC_DECODER_MAX_TASKS / 2;
     int numTasks = threadPool && height >= 128 ? MIN(minTasks, threadPool->numThreads) : 1;
     BCTask* tasks = calloc(numTasks, sizeof(BCTask));
+    TaskGroup group;
+    if (numTasks > 1) {
+        TaskGroup_init(&group);
+        TaskGroup_add(&group, numTasks);
+    }
 
     int chunkHeight = BC_ROUNDDOWN(height / numTasks);
     for (int i = 0; i < numTasks; i++) {
@@ -224,6 +292,7 @@ static inline void BCDecoder_decode(const uint8_t* src, uint8_t* dst, int width,
         task->endY = i < numTasks-1 ? task->startY + chunkHeight : height;
         task->isAlpha = isAlpha;
         task->isSigned = isSigned;
+        task->group = numTasks > 1 ? &group : NULL;
 
         int skipHeight = BC_ROUNDUP(task->startY) / BC_BLOCK;
         task->src = src + (skipHeight * skipWidth * blockSize);
@@ -235,7 +304,10 @@ static inline void BCDecoder_decode(const uint8_t* src, uint8_t* dst, int width,
         else BCDecoder_decodeThread(task);
     }
 
-    if (numTasks > 1) ThreadPool_wait(threadPool);
+    if (numTasks > 1) {
+        TaskGroup_wait(&group);
+        TaskGroup_destroy(&group);
+    }
     free(tasks);
 }
 

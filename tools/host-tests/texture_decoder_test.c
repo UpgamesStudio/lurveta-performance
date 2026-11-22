@@ -2,6 +2,8 @@
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #include <sys/mman.h>
+#include <dirent.h>
+#include <time.h>
 #include "vulkan_helper.h"
 #include "bc_decoder.h"
 
@@ -49,6 +51,12 @@ static uint8_t* readback(VkImage img, uint32_t w, uint32_t h, uint32_t texel, ui
     transition(img, layers, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     void* p; vulkanWrapper.vkMapMemory(dev, mem, 0, size, 0, &p); uint8_t* out = malloc(size); memcpy(out, p, size);
     vulkanWrapper.vkUnmapMemory(dev, mem); vulkanWrapper.vkDestroyBuffer(dev, buf, NULL); vulkanWrapper.vkFreeMemory(dev, mem, NULL); return out;
+}
+static bool cacheFileExists(void) {
+    DIR* d = opendir("/data/data/com.lurveta.co/cache/vortek"); if (!d) return false;
+    struct dirent* e; bool found = false;
+    while ((e = readdir(d))) if (strstr(e->d_name, ".imd") && !strstr(e->d_name, ".tmp")) found = true;
+    closedir(d); return found;
 }
 typedef struct { VkFormat fmt; uint32_t w, h, layers; int bcN, block; bool noAlphaU; uint32_t texel; VkImage img; ResourceMemory res; uint8_t* data; size_t size; uint64_t fakeBuf; } Case;
 static uint64_t nextFake = 0x1000;
@@ -102,7 +110,10 @@ int main(void) {
     vulkanWrapper.vkGetDeviceQueue(dev, family, 0, &queue);
     VkCommandPoolCreateInfo cpi = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO}; cpi.queueFamilyIndex = family; vulkanWrapper.vkCreateCommandPool(dev, &cpi, NULL, &tpool);
 
-    VkContext ctx = {0}; ctx.imageCacheSize = 64; ctx.graphicsQueueIndex = family; ctx.threadPool = ThreadPool_init(4);
+    // LURVETA: this test drives the legacy BATCHED path (copies queued outside command buffers).
+    // The default INLINE path is covered by tools/vortek-host-tests/test_texture_decoder_vk.c.
+    VkContext ctx = {0}; ctx.imageCacheSize = 64; ctx.graphicsQueueIndex = family; ctx.decodeThreadPool = ThreadPool_init(4);
+    ctx.textureUploadMode = TEXTURE_UPLOAD_MODE_BATCHED;
     VkPhysicalDeviceFeatures feats = {0}; feats.textureCompressionBC = VK_FALSE;
     TextureDecoder* td = TextureDecoder_create(&ctx, pdev, dev, &feats); CHECK(td && td->commandPool, "decoder create");
 
@@ -115,20 +126,23 @@ int main(void) {
     };
     int nc = sizeof cases / sizeof *cases;
     for (int i = 0; i < nc; i++) setupCase(td, &cases[i], 100 + i);
-    TextureDecoder_decodeAll(td, queue); vulkanWrapper.vkQueueWaitIdle(queue);
+    TextureDecoder_onQueueSubmit(td, queue, 0, NULL); vulkanWrapper.vkQueueWaitIdle(queue);
     const char* names[] = {"BC1_SRGB 64x64", "BC3 30x18", "BC4 128x64", "BC5_SNORM 64x64x6", "BC1 1024 (cache miss)"};
     for (int i = 0; i < nc; i++) verifyCase(&cases[i], names[i]);
     printf("batch 1: regions=%llu submits=%llu slotWaits=%llu cacheHits=%llu\n", (unsigned long long)td->statRegions, (unsigned long long)td->statSubmits, (unsigned long long)td->statSlotWaits, (unsigned long long)td->statCacheHits);
     CHECK(td->statSubmits == 1, "one submit for 5 regions (got %llu)", (unsigned long long)td->statSubmits);
 
+    // Cache files are written by a background thread: wait (bounded) until the 1024 region is on disk.
+    for (int i = 0; i < 100 && !cacheFileExists(); i++) { struct timespec ts = {0, 50000000}; nanosleep(&ts, NULL); }
+    CHECK(cacheFileExists(), "async cache writer produced no file");
     // Same 1024 texture again -> must come from the disk cache and still be correct.
     Case again = cases[4]; again.img = VK_NULL_HANDLE; setupCase(td, &again, 104);
-    TextureDecoder_decodeAll(td, queue); vulkanWrapper.vkQueueWaitIdle(queue); verifyCase(&again, "BC1 1024 (cache hit)");
+    TextureDecoder_onQueueSubmit(td, queue, 0, NULL); vulkanWrapper.vkQueueWaitIdle(queue); verifyCase(&again, "BC1 1024 (cache hit)");
     CHECK(td->statCacheHits >= 1, "cache hit expected");
 
     // > 32 MB in one batch -> overflows into the second staging slot; different queue handle -> blocking path.
     Case big[3]; for (int i = 0; i < 3; i++) { big[i] = (Case){VK_FORMAT_BC1_RGBA_UNORM_BLOCK, 2048, 2048, 1, 1, 8, false, 4}; setupCase(td, &big[i], 200 + i); }
-    uint64_t s0 = td->statSubmits; TextureDecoder_decodeAll(td, (VkQueue)0x1); 
+    uint64_t s0 = td->statSubmits; TextureDecoder_onQueueSubmit(td, (VkQueue)0x1, 0, NULL); 
     for (int i = 0; i < 3; i++) verifyCase(&big[i], "BC1 2048 big batch");
     printf("big batch: submits=%llu slotWaits=%llu\n", (unsigned long long)(td->statSubmits - s0), (unsigned long long)td->statSlotWaits);
     CHECK(td->statSubmits - s0 >= 2, "big batch should use more than one staging slot");
@@ -136,7 +150,7 @@ int main(void) {
     // Destroying an image with a pending copy must not touch freed memory (ASan).
     Case doomed = {VK_FORMAT_BC4_SNORM_BLOCK, 16, 16, 1, 4, 8, false, 1}; setupCase(td, &doomed, 300);
     TextureDecoder_destroyImage(td, doomed.img); TextureDecoder_removeBoundBuffer(td, (VkBuffer)doomed.fakeBuf);
-    TextureDecoder_decodeAll(td, queue); vulkanWrapper.vkQueueWaitIdle(queue);
+    TextureDecoder_onQueueSubmit(td, queue, 0, NULL); vulkanWrapper.vkQueueWaitIdle(queue);
 
     TextureDecoder_destroy(td);
     printf(fails ? "%d FAILURES\n" : "ALL TEXTURE DECODER INTEGRATION TESTS PASSED\n", fails);

@@ -45,6 +45,10 @@ public class VortekRendererComponent extends EnvironmentComponent implements Con
         // LURVETA: priority + ADPF hints for the request thread; frame budget for ADPF.
         public boolean performanceHints = true;
         public int targetFrameRate = 60;
+        // LURVETA: BC upload path (0 inline, 1 batched + barriers, 2 batched, 3 synchronous).
+        public int textureUploadMode = 0;
+        // LURVETA: persistent VkPipelineCache when the game passes none (DXVK, wined3d).
+        public boolean persistentPipelineCache = true;
 
         public static Options fromKeyValueSet(Context context, KeyValueSet config) {
             if (config == null || config.isEmpty()) return new Options();
@@ -65,6 +69,8 @@ public class VortekRendererComponent extends EnvironmentComponent implements Con
             options.imageCacheSize = (short)config.getInt("imageCacheSize", VortekRendererComponent.IMAGE_CACHE_SIZE);
             options.resourceMemoryType = (byte)config.getInt("resourceMemoryType");
             options.performanceHints = config.getBoolean("performanceHints", true);
+            options.textureUploadMode = config.getInt("textureUploadMode", 0);
+            options.persistentPipelineCache = config.getBoolean("pipelineCache", true);
 
             // LURVETA: always the system Vulkan driver (adrenotools custom drivers removed).
             return options;

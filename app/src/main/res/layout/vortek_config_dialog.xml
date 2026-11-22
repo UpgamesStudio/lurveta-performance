@@ -61,11 +61,28 @@
             android:layout_width="match_parent"
             android:id="@+id/SImageCacheSize"
             android:entries="@array/image_cache_size_entries" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/texture_upload_mode" />
+
+        <Spinner
+            style="@style/ComboBox"
+            android:layout_width="match_parent"
+            android:id="@+id/STextureUploadMode"
+            android:entries="@array/texture_upload_mode_entries" />
+
         <CheckBox
             android:id="@+id/CBPerformanceHints"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="@string/performance_hints" />
+
+        <CheckBox
+            android:id="@+id/CBPipelineCache"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/persistent_pipeline_cache" />
     </LinearLayout>
 </ScrollView>

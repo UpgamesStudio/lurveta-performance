@@ -27,6 +27,8 @@ public class VortekConfigDialog extends ContentDialog {
         final Spinner sResourceMemoryType = findViewById(R.id.SResourceMemoryType);
         final MultiSelectionComboBox mscbExposedExtensions = findViewById(R.id.MSCBExposedExtensions);
         final android.widget.CheckBox cbPerformanceHints = findViewById(R.id.CBPerformanceHints);
+        final Spinner sTextureUploadMode = findViewById(R.id.STextureUploadMode);
+        final android.widget.CheckBox cbPipelineCache = findViewById(R.id.CBPipelineCache);
 
         final String[] deviceExtensions = GPUHelper.vkGetDeviceExtensions();
         mscbExposedExtensions.setPopupWindowWidth(360);
@@ -51,6 +53,9 @@ public class VortekConfigDialog extends ContentDialog {
         AppUtils.setSpinnerSelectionFromNumber(sImageCacheSize, config.get("imageCacheSize", String.valueOf(VortekRendererComponent.IMAGE_CACHE_SIZE)));
         sResourceMemoryType.setSelection(config.getInt("resourceMemoryType"));
         cbPerformanceHints.setChecked(config.getBoolean("performanceHints", true));
+        cbPipelineCache.setChecked(config.getBoolean("pipelineCache", true));
+        int textureUploadMode = config.getInt("textureUploadMode", 0);
+        sTextureUploadMode.setSelection(textureUploadMode >= 0 && textureUploadMode < sTextureUploadMode.getCount() ? textureUploadMode : 0);
 
         setOnConfirmCallback(() -> {
             KeyValueSet newConfig = new KeyValueSet();
@@ -59,6 +64,8 @@ public class VortekConfigDialog extends ContentDialog {
             newConfig.put("imageCacheSize", StringUtils.parseNumber(sImageCacheSize.getSelectedItem()));
             newConfig.put("resourceMemoryType", sResourceMemoryType.getSelectedItemPosition());
             newConfig.put("performanceHints", cbPerformanceHints.isChecked() ? "1" : "0");
+            newConfig.put("textureUploadMode", sTextureUploadMode.getSelectedItemPosition());
+            newConfig.put("pipelineCache", cbPipelineCache.isChecked() ? "1" : "0");
 
             String[] selectedItems = mscbExposedExtensions.getSelectedItems();
             if (selectedItems.length > 0) {

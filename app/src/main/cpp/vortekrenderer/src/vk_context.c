@@ -1,4 +1,5 @@
 #include <time.h>
+#include <sys/stat.h>
 #include "vk_context.h"
 #include "vulkan_helper.h"
 #include "request_handler.h"
@@ -47,6 +48,45 @@ static inline int64_t monotonicNanos() {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (int64_t)ts.tv_sec * 1000000000ll + ts.tv_nsec;
+}
+
+#define VORTEK_ERROR_LOG_DIR "/data/data/" APP_ID "/files/logs"
+#define VORTEK_ERROR_LOG VORTEK_ERROR_LOG_DIR "/vortek-errors.log"
+#define DECODE_THREAD_POOL_NUM_THREADS 4
+
+static const char* resultToString(VkResult result) {
+    switch (result) {
+        case VK_ERROR_DEVICE_LOST: return "VK_ERROR_DEVICE_LOST";
+        case VK_ERROR_OUT_OF_HOST_MEMORY: return "VK_ERROR_OUT_OF_HOST_MEMORY";
+        case VK_ERROR_OUT_OF_DEVICE_MEMORY: return "VK_ERROR_OUT_OF_DEVICE_MEMORY";
+        case VK_ERROR_INITIALIZATION_FAILED: return "VK_ERROR_INITIALIZATION_FAILED";
+        case VK_ERROR_SURFACE_LOST_KHR: return "VK_ERROR_SURFACE_LOST_KHR";
+        case VK_TIMEOUT: return "VK_TIMEOUT";
+        default: return "VK_ERROR";
+    }
+}
+
+void VkContext_reportError(VkContext* context, const char* where, VkResult result) {
+    if (result >= 0) return;
+    context->status = result;
+    if (context->errorReported) return;
+    context->errorReported = true;
+
+    println("vortek: FATAL %s (%d) in %s: stopping the Vulkan server and notifying the client", resultToString(result), result, where);
+
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    mkdir(VORTEK_ERROR_LOG_DIR, 0771);
+    FILE* file = fopen(VORTEK_ERROR_LOG, "a");
+    if (file) {
+        fprintf(file, "%lld %s (%d) in %s, driver %d, engine %s\n", (long long)ts.tv_sec, resultToString(result), result, where,
+                (int)context->driverID, context->engineName ? context->engineName : "-");
+        fclose(file);
+    }
+
+    // The client reads replies from clientRing: with EXIT set its wait returns VK_ERROR_DEVICE_LOST.
+    if (context->clientRing) RingBuffer_setStatus(context->clientRing, RING_STATUS_EXIT);
+    if (context->serverRing) RingBuffer_setStatus(context->serverRing, RING_STATUS_EXIT);
 }
 
 static void* requestHandlerThread(void* param) {
@@ -100,6 +140,14 @@ static void* requestHandlerThread(void* param) {
         context->inputBufferSize = 0;
     }
 
+    // Leaving the loop for any reason other than a normal shutdown must never leave the client
+    // blocked on a reply that will not come.
+    if (context->status < 0) VkContext_reportError(context, "request loop", context->status);
+    else if (!RingBuffer_hasStatus(context->serverRing, RING_STATUS_EXIT)) {
+        println("vortek: request loop ended (connection closed)");
+        RingBuffer_setStatus(context->clientRing, RING_STATUS_EXIT);
+    }
+
     PerfHint_close(&perfHint);
     (*context->jmethods.jvm)->DetachCurrentThread(context->jmethods.jvm);
     vt_free(&context->memoryPool);
@@ -137,6 +185,8 @@ VkContext* createVkContext(JNIEnv* env, jobject obj, int clientFd, jobject optio
     context->imageCacheSize = getJFieldByName(env, options, "imageCacheSize", "S").s;
     context->resourceMemoryType = getJFieldByName(env, options, "resourceMemoryType", "B").b;
     context->performanceHints = getJFieldByName(env, options, "performanceHints", "Z").z;
+    context->textureUploadMode = getJFieldByName(env, options, "textureUploadMode", "I").i;
+    context->persistentPipelineCache = getJFieldByName(env, options, "persistentPipelineCache", "Z").z;
     int targetFrameRate = getJFieldByName(env, options, "targetFrameRate", "I").i;
     context->targetWorkDurationNanos = 1000000000ll / (targetFrameRate > 0 ? targetFrameRate : 60);
     context->exposedDeviceExtensions = jstringArrayToCharArray(env, exposedDeviceExtensions);
@@ -145,6 +195,7 @@ VkContext* createVkContext(JNIEnv* env, jobject obj, int clientFd, jobject optio
 
     context->memoryPool.data = calloc(MEMORY_POOL_MAX_SIZE, 1);
     context->threadPool = ThreadPool_init(THREAD_POOL_NUM_THREADS);
+    context->decodeThreadPool = ThreadPool_init(DECODE_THREAD_POOL_NUM_THREADS);
 
     (*env)->GetJavaVM(env, &context->jmethods.jvm);
     context->jmethods.obj = (*env)->NewGlobalRef(env, obj);
@@ -167,6 +218,8 @@ void destroyVkContext(JNIEnv* env, VkContext* context) {
 
         ThreadPool_destroy(context->threadPool);
         context->threadPool = NULL;
+        ThreadPool_destroy(context->decodeThreadPool);
+        context->decodeThreadPool = NULL;
 
         context->requestHandlerThread = 0;
         RingBuffer_free(context->serverRing);
@@ -181,8 +234,16 @@ void destroyVkContext(JNIEnv* env, VkContext* context) {
     context->graphicsQueueIndex = 0;
 
     if (context->textureDecoder) {
-        TextureDecoder_destroy(context->textureDecoder);
+        TextureDecoder_destroyDetached(context->textureDecoder);
         context->textureDecoder = NULL;
+    }
+
+    // The client went away without vkDestroyDevice (typical when Wine is killed): keep what was
+    // compiled. The VkPipelineCache itself is left to the (leaked) device: a pipeline thread may
+    // still be using it.
+    if (context->pipelineCache) {
+        PersistentPipelineCache_save(context->pipelineCache);
+        context->pipelineCache = NULL;
     }
 
     ArrayList_free(context->exposedDeviceExtensions, true);
