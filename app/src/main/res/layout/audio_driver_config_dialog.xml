@@ -11,8 +11,7 @@
         android:orientation="vertical">
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/performance_mode" />
 
         <Spinner
@@ -22,8 +21,7 @@
             android:entries="@array/audio_performance_mode_entries" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/volume" />
 
         <com.winlator.widget.SeekBar
@@ -35,8 +33,7 @@
             app:maxValue="100" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/average_latency" />
 
         <com.winlator.widget.SeekBar

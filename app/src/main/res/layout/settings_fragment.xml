@@ -20,9 +20,8 @@
 
                 <LinearLayout style="@style/FieldSet">
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/cursor_speed"/>
+                        style="@style/LvFieldLabel"
+                        android:text="@string/cursor_speed" />
 
                     <com.winlator.widget.SeekBar
                         android:id="@+id/SBCursorSpeed"
@@ -45,9 +44,8 @@
                             android:orientation="vertical">
 
                             <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/cursor_size"/>
+                                style="@style/LvFieldLabel"
+                                android:text="@string/cursor_size" />
 
                             <com.winlator.widget.SeekBar
                                 android:id="@+id/SBCursorSize"
@@ -66,8 +64,7 @@
                             android:layout_marginLeft="8dp">
 
                             <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
+                                style="@style/LvFieldLabel"
                                 android:text="@string/color" />
 
                             <com.winlator.widget.ColorPickerView
@@ -104,8 +101,7 @@
 
                 <LinearLayout style="@style/FieldSet">
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        style="@style/LvFieldLabel"
                         android:text="@string/gamepad_model" />
 
                     <Spinner
@@ -182,8 +178,7 @@
 
                 <LinearLayout style="@style/FieldSet">
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        style="@style/LvFieldLabel"
                         android:text="@string/midi_input_device" />
 
                     <Spinner
@@ -192,8 +187,7 @@
                         android:layout_width="match_parent" />
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        style="@style/LvFieldLabel"
                         android:text="@string/midi_soundfont" />
 
                     <LinearLayout
@@ -243,8 +237,7 @@
 
                 <LinearLayout style="@style/FieldSet">
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        style="@style/LvFieldLabel"
                         android:text="@string/language" />
 
                     <Spinner
@@ -254,8 +247,7 @@
                         android:entries="@array/language_entries" />
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        style="@style/LvFieldLabel"
                         android:text="@string/theme" />
 
                     <RadioGroup
@@ -329,8 +321,7 @@
 
                 <LinearLayout style="@style/FieldSet">
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        style="@style/LvFieldLabel"
                         android:text="@string/box64_version" />
 
                     <LinearLayout
@@ -364,8 +355,7 @@
                     </LinearLayout>
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        style="@style/LvFieldLabel"
                         android:text="@string/box64_preset" />
 
                     <LinearLayout
@@ -428,8 +418,7 @@
                     <View style="@style/FieldSeparator" />
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        style="@style/LvFieldLabel"
                         android:text="@string/box64_logs" />
 
                     <Spinner
@@ -462,8 +451,7 @@
                         <View style="@style/FieldSeparator" />
 
                         <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            style="@style/LvFieldLabel"
                             android:text="@string/wine_version" />
 
                         <LinearLayout
@@ -520,11 +508,8 @@
     </ScrollView>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
+        style="@style/LvFab"
         android:id="@+id/BTConfirm"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="right|bottom"
-        android:tint="#ffffff"
-        android:src="@drawable/icon_confirm"
-        android:layout_margin="16dp" />
+        android:contentDescription="@string/ok"
+        android:src="@drawable/icon_confirm" />
 </FrameLayout>

@@ -22,8 +22,7 @@
 
                 <LinearLayout style="@style/FieldSet">
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        style="@style/LvFieldLabel"
                         android:text="@string/brightness" />
 
                     <com.winlator.widget.SeekBar
@@ -34,8 +33,7 @@
                         app:maxValue="50" />
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        style="@style/LvFieldLabel"
                         android:text="@string/contrast" />
 
                     <com.winlator.widget.SeekBar
@@ -46,8 +44,7 @@
                         app:maxValue="100" />
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        style="@style/LvFieldLabel"
                         android:text="@string/gamma" />
 
                     <com.winlator.widget.SeekBar
@@ -61,8 +58,7 @@
 
                 <TextView
                     style="@style/FieldSetLabel"
-                    android:text="@string/color_adjustment"
-                    android:background="?attr/colorSecondarySurface" />
+                    android:text="@string/color_adjustment" />
             </FrameLayout>
         </LinearLayout>
 
@@ -75,8 +71,7 @@
             android:orientation="vertical">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                style="@style/LvFieldLabel"
                 android:text="@string/profile" />
 
             <LinearLayout

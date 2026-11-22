@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Library card cover: input surface with a subtle cyan glow (static, no runtime cost). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="?attr/lvSurfaceInput" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:type="radial" android:gradientRadius="70%"
+                android:centerX="0.5" android:centerY="0.42"
+                android:startColor="#2200C8F5" android:endColor="#0000C8F5" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+</layer-list>

@@ -34,8 +34,8 @@
                     android:id="@+id/CircularProgressIndicator"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    app:trackThickness="10dp"
-                    app:trackColor="#bdbdbd"
+                    app:trackThickness="6dp"
+                    app:trackColor="?attr/lvStrokeStrong"
                     app:indicatorColor="?attr/colorAccent"
                     app:indicatorSize="64dp"
                     android:layout_gravity="center" />

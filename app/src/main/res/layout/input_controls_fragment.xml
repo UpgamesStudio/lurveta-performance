@@ -11,8 +11,7 @@
         android:padding="16dp">
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/profile" />
 
         <LinearLayout
@@ -53,9 +52,8 @@
         </LinearLayout>
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/cursor_speed"/>
+            style="@style/LvFieldLabel"
+            android:text="@string/cursor_speed" />
 
         <com.winlator.widget.SeekBar
             android:id="@+id/SBCursorSpeed"
@@ -66,9 +64,8 @@
             app:maxValue="250" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/overlay_opacity"/>
+            style="@style/LvFieldLabel"
+            android:text="@string/overlay_opacity" />
 
         <com.winlator.widget.SeekBar
             android:id="@+id/SBOverlayOpacity"

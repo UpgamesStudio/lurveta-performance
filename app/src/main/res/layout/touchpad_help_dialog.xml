@@ -34,7 +34,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="#757575"
+                    android:textColor="?attr/colorSecondaryText"
                     android:text="@string/touchpad_help_mouse_left_click_description" />
             </LinearLayout>
         </LinearLayout>
@@ -66,7 +66,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="#757575"
+                    android:textColor="?attr/colorSecondaryText"
                     android:text="@string/touchpad_help_mouse_right_click_description" />
             </LinearLayout>
         </LinearLayout>
@@ -98,7 +98,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="#757575"
+                    android:textColor="?attr/colorSecondaryText"
                     android:text="@string/touchpad_help_mouse_scroll_wheel_description" />
             </LinearLayout>
         </LinearLayout>
@@ -130,7 +130,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="#757575"
+                    android:textColor="?attr/colorSecondaryText"
                     android:text="@string/touchpad_help_main_menu_description" />
             </LinearLayout>
         </LinearLayout>

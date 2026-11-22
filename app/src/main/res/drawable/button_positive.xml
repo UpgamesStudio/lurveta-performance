@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android" >
-    <item android:state_pressed="true" android:drawable="@drawable/button_positive_pressed" />
-    <item android:state_focused="true" android:drawable="@drawable/button_positive_normal" />
-    <item android:drawable="@drawable/button_positive_normal" />
-</selector>
+<!-- LURVETA primary button: electric cyan, dark label. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="#33FFFFFF">
+    <item>
+        <selector>
+            <item android:state_enabled="false">
+                <shape android:shape="rectangle"><solid android:color="?attr/lvSurfaceInput" /><corners android:radius="12dp" /></shape>
+            </item>
+            <item android:state_pressed="true">
+                <shape android:shape="rectangle"><solid android:color="@color/lv_cyan_pressed" /><corners android:radius="12dp" /></shape>
+            </item>
+            <item>
+                <shape android:shape="rectangle"><solid android:color="?attr/colorAccent" /><corners android:radius="12dp" /></shape>
+            </item>
+        </selector>
+    </item>
+</ripple>

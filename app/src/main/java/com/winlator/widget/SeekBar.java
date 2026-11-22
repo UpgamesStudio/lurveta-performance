@@ -4,10 +4,8 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.RectF;
-import android.graphics.Shader;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
@@ -34,15 +32,14 @@ public class SeekBar extends AppCompatImageView {
     private float normalizedValue = 0;
     private OnValueChangeListener onValueChangeListener;
     private float textSize = UnitUtils.dpToPx(16);
-    private final int textColor = 0xff737373;
+    private final int textColor;
     private final float barHeight = UnitUtils.dpToPx(6);
     private final float thumbSize = UnitUtils.dpToPx(20);
     private final float thumbRadius;
     private final RectF rect = new RectF();
     private String suffix;
-    private final int colorPrimary = 0xffd7d7d7;
+    private final int colorPrimary;
     private final int colorSecondary;
-    private LinearGradient glossyEffectGradient;
 
     public interface OnValueChangeListener {
         void onValueChangeListener(SeekBar seekBar, float value);
@@ -59,6 +56,9 @@ public class SeekBar extends AppCompatImageView {
     public SeekBar(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         colorSecondary = AppUtils.getThemeColor(context, R.attr.colorAccent);
+        // LURVETA design system: track and value text follow the theme (visual only).
+        colorPrimary = AppUtils.getThemeColor(context, R.attr.lvStrokeStrong);
+        textColor = AppUtils.getThemeColor(context, R.attr.colorSecondaryText);
 
         if (attrs != null) {
             TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.SeekBar, 0, 0);
@@ -206,13 +206,6 @@ public class SeekBar extends AppCompatImageView {
         canvas.drawRoundRect(rect, cornerRadius, cornerRadius, paint);
 
         rect.right = width - textWidth;
-        if (glossyEffectGradient == null) {
-            glossyEffectGradient = new LinearGradient(0, 0, 0, height, new int[]{0x33ffffff, 0x00000000}, new float[]{0.5f, 0.5f}, Shader.TileMode.CLAMP);
-        }
-        paint.setShader(glossyEffectGradient);
-        canvas.drawRoundRect(rect, cornerRadius, cornerRadius, paint);
-        paint.setShader(null);
-
         canvas.drawCircle(screenCoord, centerY, thumbRadius, paint);
         paint.setColor(getThumbHoleColor());
         canvas.drawCircle(screenCoord, centerY, thumbRadius * 0.5f, paint);

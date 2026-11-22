@@ -33,8 +33,13 @@
         android:id="@+id/NavigationView"
         android:fitsSystemWindows="true"
         app:headerLayout="@layout/main_menu_header"
-        app:itemIconTint="?attr/colorAccent"
-        app:itemTextColor="?attr/colorPrimaryText"
-        android:background="?attr/colorSecondarySurface"
+        app:itemIconTint="@color/lv_nav_item_icon"
+        app:itemTextColor="@color/lv_nav_item_text"
+        app:itemBackground="@drawable/lv_drawer_item_background"
+        app:itemTextAppearance="@style/LvDrawerItemText"
+        app:itemHorizontalPadding="28dp"
+        app:itemIconPadding="18dp"
+        app:itemIconSize="22dp"
+        android:background="?attr/lvSurfaceRaised"
         app:menu="@menu/main_menu"/>
 </androidx.drawerlayout.widget.DrawerLayout>

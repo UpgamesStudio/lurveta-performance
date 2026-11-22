@@ -5,7 +5,7 @@
     android:layout_height="wrap_content"
     android:layout_weight="1"
     android:padding="1dp"
-    android:background="@drawable/bordered_panel"
+    android:background="@drawable/lv_bg_chip"
     android:layout_margin="1dp">
 
     <LinearLayout

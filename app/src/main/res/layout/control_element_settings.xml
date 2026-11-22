@@ -11,8 +11,7 @@
         android:padding="8dp">
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/type" />
 
         <Spinner
@@ -27,8 +26,7 @@
             android:orientation="vertical">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                style="@style/LvFieldLabel"
                 android:text="@string/shape" />
 
             <Spinner
@@ -38,9 +36,8 @@
         </LinearLayout>
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/scale"/>
+            style="@style/LvFieldLabel"
+            android:text="@string/scale" />
 
         <com.winlator.widget.SeekBar
             android:id="@+id/SBScale"
@@ -52,8 +49,7 @@
             app:maxValue="300" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/opacity" />
 
         <com.winlator.widget.SeekBar
@@ -72,8 +68,7 @@
             android:orientation="vertical">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                style="@style/LvFieldLabel"
                 android:text="@string/range" />
 
             <Spinner
@@ -82,8 +77,7 @@
                 android:layout_width="match_parent" />
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                style="@style/LvFieldLabel"
                 android:text="@string/orientation" />
 
             <RadioGroup
@@ -106,8 +100,7 @@
             </RadioGroup>
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                style="@style/LvFieldLabel"
                 android:text="@string/columns" />
 
             <com.winlator.widget.NumberPicker
@@ -125,8 +118,7 @@
             android:orientation="vertical">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                style="@style/LvFieldLabel"
                 android:text="@string/note" />
 
             <Spinner
@@ -142,8 +134,7 @@
             android:orientation="vertical">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                style="@style/LvFieldLabel"
                 android:text="@string/bindings" />
 
             <com.winlator.widget.NumberPicker
@@ -179,8 +170,7 @@
             android:orientation="vertical">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                style="@style/LvFieldLabel"
                 android:text="@string/custom_text" />
 
             <EditText
@@ -192,8 +182,7 @@
                 android:inputType="textCapCharacters" />
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                style="@style/LvFieldLabel"
                 android:text="@string/icon" />
 
             <HorizontalScrollView

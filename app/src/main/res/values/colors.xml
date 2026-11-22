@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LURVETA design system — color tokens (see docs/REDISENO_UI.md, phase 2). -->
+<resources>
+    <!-- Brand -->
+    <color name="lv_cyan">#00C8F5</color>
+    <color name="lv_cyan_pressed">#00A2C7</color>
+    <color name="lv_cyan_deep">#0091B8</color>
+    <color name="lv_cyan_soft">#1F00C8F5</color>
+    <color name="lv_cyan_soft_strong">#3800C8F5</color>
+    <color name="lv_on_cyan">#02141B</color>
+    <color name="lv_violet">#8A6CFF</color>
+
+    <!-- Status -->
+    <color name="lv_success">#2BD9A0</color>
+    <color name="lv_warning">#FFB547</color>
+    <color name="lv_danger">#FF5A6A</color>
+
+    <!-- Dark (default): deep black and graphite -->
+    <color name="lv_d_bg">#07090D</color>
+    <color name="lv_d_surface_1">#0F141B</color>
+    <color name="lv_d_surface_2">#141A23</color>
+    <color name="lv_d_surface_3">#1B232E</color>
+    <color name="lv_d_surface_4">#232D3A</color>
+    <color name="lv_d_stroke">#1F2833</color>
+    <color name="lv_d_stroke_strong">#2D3948</color>
+    <color name="lv_d_text_primary">#EDF2F7</color>
+    <color name="lv_d_text_secondary">#8D9AAA</color>
+    <color name="lv_d_text_tertiary">#5A6676</color>
+
+    <!-- Light -->
+    <color name="lv_l_bg">#F1F3F6</color>
+    <color name="lv_l_surface_1">#FFFFFF</color>
+    <color name="lv_l_surface_2">#FFFFFF</color>
+    <color name="lv_l_surface_3">#EBEFF4</color>
+    <color name="lv_l_surface_4">#DEE4EB</color>
+    <color name="lv_l_stroke">#DCE2E9</color>
+    <color name="lv_l_stroke_strong">#C6CFDA</color>
+    <color name="lv_l_text_primary">#0D131A</color>
+    <color name="lv_l_text_secondary">#556172</color>
+    <color name="lv_l_text_tertiary">#8D97A5</color>
+
+    <!-- Brand header (toolbar, drawer header): dark in both themes -->
+    <color name="lv_header">#07090D</color>
+    <color name="lv_header_light">#0F151D</color>
+    <color name="lv_on_header">#EEF3F8</color>
+
+    <!-- In-game overlays (always dark, drawn over the game) -->
+    <color name="lv_overlay">#B3070A0F</color>
+    <color name="lv_overlay_stroke">#26FFFFFF</color>
+</resources>

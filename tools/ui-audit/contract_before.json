@@ -1,0 +1,947 @@
+{
+ "layouts": {
+  "layout/about_dialog.xml": {
+   "ids": {
+    "TVAppVersion": "TextView",
+    "TVCreditsAndThirdPartyApps": "TextView",
+    "TVHardwareInfo": "TextView",
+    "TVWebpage": "TextView"
+   },
+   "root": "ScrollView"
+  },
+  "layout/active_window_list_item.xml": {
+   "ids": {
+    "IVDashedFrame": "ImageView",
+    "IVHidden": "ImageView",
+    "IVIcon": "ImageView",
+    "IVWindow": "ImageView",
+    "TVName": "TextView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/active_windows_dialog.xml": {
+   "ids": {
+    "LLWindowList": "LinearLayout",
+    "TVEmptyText": "TextView"
+   },
+   "root": "FrameLayout"
+  },
+  "layout/add_env_var_dialog.xml": {
+   "ids": {
+    "BTMenu": "ImageButton",
+    "ETName": "EditText",
+    "ETValue": "EditText"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/audio_driver_config_dialog.xml": {
+   "ids": {
+    "SBLatencyMillis": "com.winlator.widget.SeekBar",
+    "SBVolume": "com.winlator.widget.SeekBar",
+    "SPerformanceMode": "Spinner"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/base_file_manager_fragment.xml": {
+   "ids": {
+    "BTPaste": "com.google.android.material.floatingactionbutton.FloatingActionButton",
+    "RecyclerView": "androidx.recyclerview.widget.RecyclerView",
+    "TVEmptyText": "TextView"
+   },
+   "root": "FrameLayout"
+  },
+  "layout/binding_field.xml": {
+   "ids": {
+    "BTAdd": "ImageButton",
+    "LLTitleBar": "LinearLayout",
+    "SBinding": "Spinner",
+    "SBindingType": "Spinner",
+    "TVTitle": "TextView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/box64_edit_preset_dialog.xml": {
+   "ids": {
+    "ETName": "EditText",
+    "LLContent": "LinearLayout"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/box64_env_var_list_item.xml": {
+   "ids": {
+    "BTHelp": "ImageView",
+    "Spinner": "Spinner",
+    "TextView": "TextView",
+    "ToggleButton": "ToggleButton"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/container_detail_fragment.xml": {
+   "ids": {
+    "BTAddDrive": "Button",
+    "BTAddEnvVar": "Button",
+    "BTAudioDriverConfig": "ImageButton",
+    "BTConfirm": "com.google.android.material.floatingactionbutton.FloatingActionButton",
+    "BTHelpDXWrapper": "ImageView",
+    "CPUListView": "com.winlator.widget.CPUListView",
+    "CPUListViewWoW64": "com.winlator.widget.CPUListView",
+    "CPVDesktopBackgroundColor": "com.winlator.widget.ColorPickerView",
+    "ETName": "EditText",
+    "ETScreenHeight": "EditText",
+    "ETScreenWidth": "EditText",
+    "EnvVarsView": "com.winlator.widget.EnvVarsView",
+    "IPVDesktopBackgroundImage": "com.winlator.widget.ImagePickerView",
+    "LLCustomScreenSize": "LinearLayout",
+    "LLDXWrapper": "LinearLayout",
+    "LLDrives": "LinearLayout",
+    "LLGraphicsDriver": "LinearLayout",
+    "LLTabAdvanced": "LinearLayout",
+    "LLTabDrives": "LinearLayout",
+    "LLTabEnvVars": "LinearLayout",
+    "LLTabWinComponents": "LinearLayout",
+    "LLTabWineConfiguration": "LinearLayout",
+    "LLWinComponentsDirectX": "LinearLayout",
+    "LLWinComponentsGeneral": "LinearLayout",
+    "LLWineVersion": "LinearLayout",
+    "RBDark": "RadioButton",
+    "RBLight": "RadioButton",
+    "RGDesktopTheme": "RadioGroup",
+    "SAudioDriver": "Spinner",
+    "SBLogPixels": "com.winlator.widget.SeekBar",
+    "SBox64Preset": "Spinner",
+    "SDesktopBackgroundType": "Spinner",
+    "SHUDMode": "Spinner",
+    "SMouseWarpOverride": "Spinner",
+    "SScreenSize": "Spinner",
+    "SStartupSelection": "Spinner",
+    "SSystemFont": "Spinner",
+    "SWinVersion": "Spinner",
+    "SWineVersion": "Spinner",
+    "TVDrivesEmptyText": "TextView",
+    "TabLayout": "com.google.android.material.tabs.TabLayout"
+   },
+   "root": "FrameLayout"
+  },
+  "layout/container_list_item.xml": {
+   "ids": {
+    "BTMenu": "ImageView",
+    "BTRun": "ImageView",
+    "ImageView": "ImageView",
+    "TVTitle": "TextView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/container_storage_info_dialog.xml": {
+   "ids": {
+    "CircularProgressIndicator": "com.google.android.material.progressindicator.CircularProgressIndicator",
+    "TVCacheSize": "TextView",
+    "TVDriveCSize": "TextView",
+    "TVTotalSize": "TextView",
+    "TVUsedSpace": "TextView"
+   },
+   "root": "ScrollView"
+  },
+  "layout/containers_fragment.xml": {
+   "ids": {
+    "RecyclerView": "androidx.recyclerview.widget.RecyclerView",
+    "TVEmptyText": "TextView"
+   },
+   "root": "FrameLayout"
+  },
+  "layout/content_dialog.xml": {
+   "ids": {
+    "BTCancel": "Button",
+    "BTConfirm": "Button",
+    "BTReset": "Button",
+    "EditText": "EditText",
+    "FrameLayout": "FrameLayout",
+    "IVIcon": "ImageView",
+    "IVMessageIcon": "ImageView",
+    "LLBottomBar": "LinearLayout",
+    "LLBottomBarPanel": "LinearLayout",
+    "LLTitleBar": "LinearLayout",
+    "ListView": "ListView",
+    "TVBottomBarText": "TextView",
+    "TVMessage": "TextView",
+    "TVTitle": "TextView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/control_element_settings.xml": {
+   "ids": {
+    "CBMouseMoveMode": "CheckBox",
+    "CBToggleSwitch": "CheckBox",
+    "ETCustomText": "EditText",
+    "LLBindings": "LinearLayout",
+    "LLCustomTextIcon": "LinearLayout",
+    "LLIconList": "LinearLayout",
+    "LLMIDIKeyOptions": "LinearLayout",
+    "LLRadialMenuOptions": "LinearLayout",
+    "LLRangeOptions": "LinearLayout",
+    "LLShape": "LinearLayout",
+    "NPBindings": "com.winlator.widget.NumberPicker",
+    "NPColumns": "com.winlator.widget.NumberPicker",
+    "RBHorizontal": "RadioButton",
+    "RBVertical": "RadioButton",
+    "RGOrientation": "RadioGroup",
+    "SBOpacity": "com.winlator.widget.SeekBar",
+    "SBScale": "com.winlator.widget.SeekBar",
+    "SNote": "Spinner",
+    "SRange": "Spinner",
+    "SShape": "Spinner",
+    "SType": "Spinner"
+   },
+   "root": "ScrollView"
+  },
+  "layout/controls_editor_activity.xml": {
+   "ids": {
+    "BTAddElement": "ImageButton",
+    "BTElementSettings": "ImageButton",
+    "BTMove": "ImageButton",
+    "BTRemoveElement": "ImageButton",
+    "FLContainer": "FrameLayout",
+    "TVProfileName": "TextView",
+    "Toolbox": "LinearLayout"
+   },
+   "root": "FrameLayout"
+  },
+  "layout/cpu_list_dialog.xml": {
+   "ids": {
+    "CPUListView": "com.winlator.widget.CPUListView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/cpu_list_item.xml": {
+   "ids": {
+    "CheckBox": "CheckBox",
+    "TextView": "TextView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/create_folder_dialog.xml": {
+   "ids": {
+    "ETName": "EditText",
+    "SContainer": "Spinner"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/custom_toast.xml": {
+   "ids": {
+    "TextView": "TextView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/debug_dialog.xml": {
+   "ids": {
+    "LogView": "com.winlator.widget.LogView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/debug_toolbar.xml": {
+   "ids": {
+    "BTClear": "ImageButton",
+    "BTExport": "ImageButton",
+    "BTPause": "ImageButton"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/download_progress_dialog.xml": {
+   "ids": {
+    "BTCancel": "Button",
+    "CircularProgressIndicator": "com.google.android.material.progressindicator.CircularProgressIndicator",
+    "LLBottomBar": "LinearLayout",
+    "TVProgress": "TextView",
+    "TextView": "TextView"
+   },
+   "root": "FrameLayout"
+  },
+  "layout/drive_list_item.xml": {
+   "ids": {
+    "BTRemove": "ImageButton",
+    "BTSearch": "ImageButton",
+    "EditText": "EditText",
+    "Spinner": "Spinner"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/dxvk_config_dialog.xml": {
+   "ids": {
+    "DXVKToolbox": "LinearLayout",
+    "SCustomDevice": "Spinner",
+    "SDDrawWrapper": "Spinner",
+    "SFramerate": "Spinner",
+    "SMaxDeviceMemory": "Spinner",
+    "SVersion": "Spinner"
+   },
+   "root": "ScrollView"
+  },
+  "layout/env_vars_list_item.xml": {
+   "ids": {
+    "BTRemove": "ImageButton",
+    "EditText": "EditText",
+    "MultiSelectionComboBox": "com.winlator.widget.MultiSelectionComboBox",
+    "Spinner": "Spinner",
+    "TextView": "TextView",
+    "ToggleButton": "ToggleButton"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/external_controller_binding_list_item.xml": {
+   "ids": {
+    "BTRemove": "ImageButton",
+    "SBinding": "Spinner",
+    "SBindingType": "Spinner",
+    "TVTitle": "TextView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/external_controller_bindings_activity.xml": {
+   "ids": {
+    "RecyclerView": "androidx.recyclerview.widget.RecyclerView",
+    "TVEmptyText": "TextView",
+    "Toolbar": "androidx.appcompat.widget.Toolbar"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/external_controller_list_item.xml": {
+   "ids": {
+    "BTRemove": "ImageButton",
+    "ImageView": "ImageView",
+    "TVSubtitle": "TextView",
+    "TVTitle": "TextView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/file_grid_item.xml": {
+   "ids": {
+    "BTMenu": "ImageView",
+    "BTRun": "ImageView",
+    "ImageView": "ImageView",
+    "TVSubtitle": "TextView",
+    "TVTitle": "TextView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/file_info_dialog.xml": {
+   "ids": {
+    "LLContent": "LinearLayout"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/file_list_item.xml": {
+   "ids": {
+    "BTMenu": "ImageView",
+    "BTRun": "ImageView",
+    "ImageView": "ImageView",
+    "TVSubtitle": "TextView",
+    "TVTitle": "TextView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/frame_rating.xml": {
+   "ids": {
+    "LLCPUPanel": "LinearLayout",
+    "LLFPSPanel": "LinearLayout",
+    "LLGPUPanel": "LinearLayout",
+    "LLLowsPanel": "LinearLayout",
+    "LLRAMPanel": "LinearLayout",
+    "LLTempPanel": "LinearLayout"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/gamepad_player_config_dialog.xml": {
+   "ids": {
+    "CBEnableVibration": "CheckBox",
+    "RBControlsProfile": "RadioButton",
+    "RBExternalController": "RadioButton",
+    "RGMode": "RadioGroup",
+    "SSource": "Spinner"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/image_picker_list_item.xml": {
+   "ids": {
+    "BTRemove": "ImageView",
+    "ImageView": "ImageView"
+   },
+   "root": "FrameLayout"
+  },
+  "layout/image_picker_view.xml": {
+   "ids": {
+    "BTBrowse": "Button",
+    "LLImageList": "LinearLayout"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/input_controls_dialog.xml": {
+   "ids": {
+    "BTSettings": "ImageView",
+    "CBRelativeMouseMovement": "CheckBox",
+    "CBShowTouchscreenControls": "CheckBox",
+    "SProfile": "Spinner"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/input_controls_fragment.xml": {
+   "ids": {
+    "BTAddProfile": "ImageButton",
+    "BTControlsEditor": "Button",
+    "BTDuplicateProfile": "ImageButton",
+    "BTEditProfile": "ImageButton",
+    "BTExportProfile": "Button",
+    "BTImportProfile": "Button",
+    "BTRemoveProfile": "ImageButton",
+    "CBDisableMouseInput": "CheckBox",
+    "LLExternalControllers": "LinearLayout",
+    "SBCursorSpeed": "com.winlator.widget.SeekBar",
+    "SBOverlayOpacity": "com.winlator.widget.SeekBar",
+    "SProfile": "Spinner",
+    "TVEmptyText": "TextView"
+   },
+   "root": "ScrollView"
+  },
+  "layout/installed_wine_list_item.xml": {
+   "ids": {
+    "BTRemove": "ImageButton",
+    "ImageView": "ImageView",
+    "TVTitle": "TextView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/magnifier_view.xml": {
+   "ids": {
+    "BTHide": "ImageButton",
+    "BTMove": "ImageButton",
+    "BTZoomMinus": "ImageButton",
+    "BTZoomPlus": "ImageButton",
+    "TextView": "TextView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/main_activity.xml": {
+   "ids": {
+    "DrawerLayout": "androidx.drawerlayout.widget.DrawerLayout",
+    "FLFragmentContainer": "FrameLayout",
+    "NavigationView": "com.google.android.material.navigation.NavigationView",
+    "Toolbar": "androidx.appcompat.widget.Toolbar"
+   },
+   "root": "androidx.drawerlayout.widget.DrawerLayout"
+  },
+  "layout/main_menu_header.xml": {
+   "ids": {},
+   "root": "LinearLayout"
+  },
+  "layout/number_picker.xml": {
+   "ids": {
+    "BTDecrement": "ImageButton",
+    "BTIncrement": "ImageButton",
+    "EditText": "EditText"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/preloader_dialog.xml": {
+   "ids": {
+    "TextView": "TextView"
+   },
+   "root": "FrameLayout"
+  },
+  "layout/process_info_list_item.xml": {
+   "ids": {
+    "BTMenu": "ImageButton",
+    "IVIcon": "ImageView",
+    "TVMemoryUsage": "TextView",
+    "TVName": "TextView",
+    "TVPID": "TextView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/screen_effect_dialog.xml": {
+   "ids": {
+    "BTAddProfile": "ImageButton",
+    "BTRemoveProfile": "ImageButton",
+    "CBEnableCRTShader": "CheckBox",
+    "CBEnableFXAA": "CheckBox",
+    "SBBrightness": "com.winlator.widget.SeekBar",
+    "SBContrast": "com.winlator.widget.SeekBar",
+    "SBGamma": "com.winlator.widget.SeekBar",
+    "SProfile": "Spinner"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/settings_fragment.xml": {
+   "ids": {
+    "BTAddBox64Preset": "ImageButton",
+    "BTConfirm": "com.google.android.material.floatingactionbutton.FloatingActionButton",
+    "BTDuplicateBox64Preset": "ImageButton",
+    "BTEditBox64Preset": "ImageButton",
+    "BTInstallWine": "ImageButton",
+    "BTReinstallSystemFiles": "Button",
+    "BTRemoveBox64Preset": "ImageButton",
+    "BTRemoveWine": "ImageButton",
+    "BTResetGamepadPlayerConfigs": "ImageView",
+    "BTSoundFontTest": "ImageButton",
+    "Box64Toolbox": "LinearLayout",
+    "CBCapturePointerOnExternalMouse": "CheckBox",
+    "CBEnableBackgroundProtection": "CheckBox",
+    "CBEnableBackgroundWakelock": "CheckBox",
+    "CBEnableWineDebug": "CheckBox",
+    "CBMoveCursorToTouchpoint": "CheckBox",
+    "CBOpenAndroidBrowserFromWine": "CheckBox",
+    "CBSaveLogsToFile": "CheckBox",
+    "CBSaveMemOnRunFromSteam": "CheckBox",
+    "CBUseAndroidClipboardOnWine": "CheckBox",
+    "CPVCursorColor": "com.winlator.widget.ColorPickerView",
+    "ETLogFile": "EditText",
+    "LLGamepadPlayer": "LinearLayout",
+    "LLWineDebugChannels": "LinearLayout",
+    "LLWineInstallation": "LinearLayout",
+    "RBDark": "RadioButton",
+    "RBLight": "RadioButton",
+    "RGAppTheme": "RadioGroup",
+    "SBCursorSize": "com.winlator.widget.SeekBar",
+    "SBCursorSpeed": "com.winlator.widget.SeekBar",
+    "SBox64Logs": "Spinner",
+    "SBox64Preset": "Spinner",
+    "SBox64Version": "Spinner",
+    "SGamepadModel": "Spinner",
+    "SLanguage": "Spinner",
+    "SMIDIInputDevice": "Spinner",
+    "SSoundFont": "Spinner",
+    "SWineVersion": "Spinner",
+    "SoundFontToolbox": "LinearLayout"
+   },
+   "root": "FrameLayout"
+  },
+  "layout/shortcut_settings_dialog.xml": {
+   "ids": {
+    "BTAddEnvVar": "Button",
+    "BTAudioDriverConfig": "ImageButton",
+    "BTExtraArgsMenu": "ImageButton",
+    "BTHelpDXWrapper": "ImageView",
+    "BTNameMenu": "ImageButton",
+    "CBForceFullscreen": "CheckBox",
+    "ETExecArgs": "EditText",
+    "ETName": "EditText",
+    "ETScreenHeight": "EditText",
+    "ETScreenWidth": "EditText",
+    "EnvVarsView": "com.winlator.widget.EnvVarsView",
+    "LLContent": "LinearLayout",
+    "LLCustomScreenSize": "LinearLayout",
+    "LLDXWrapper": "LinearLayout",
+    "LLGraphicsDriver": "LinearLayout",
+    "LLTabAdvanced": "LinearLayout",
+    "LLTabEnvVars": "LinearLayout",
+    "LLTabWinComponents": "LinearLayout",
+    "LLWinComponentsDirectX": "LinearLayout",
+    "LLWinComponentsGeneral": "LinearLayout",
+    "SAudioDriver": "Spinner",
+    "SBox64Preset": "Spinner",
+    "SControlsProfile": "Spinner",
+    "SDInputMapperType": "Spinner",
+    "SLurvetaProfile": "Spinner",
+    "SScreenSize": "Spinner",
+    "TVLurvetaProfileHint": "TextView",
+    "TabLayout": "com.google.android.material.tabs.TabLayout"
+   },
+   "root": "ScrollView"
+  },
+  "layout/simple_list_item_multiple_choice.xml": {
+   "ids": {},
+   "root": "CheckedTextView"
+  },
+  "layout/simple_list_item_single_choice.xml": {
+   "ids": {},
+   "root": "CheckedTextView"
+  },
+  "layout/soundfont_test_dialog.xml": {
+   "ids": {
+    "SChannel": "Spinner",
+    "SInstrument": "Spinner",
+    "SimplePianoKeyboard": "com.winlator.widget.SimplePianoKeyboard"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/tagged_selection_box.xml": {
+   "ids": {
+    "BTSettings": "ImageView",
+    "LLDisplayBox": "LinearLayout",
+    "TVLabel": "TextView",
+    "TVName": "TextView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/task_manager_dialog.xml": {
+   "ids": {
+    "LLPanelList": "LinearLayout",
+    "LLProcessList": "LinearLayout",
+    "LLTableHead": "LinearLayout",
+    "TVEmptyText": "TextView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/task_manager_panel.xml": {
+   "ids": {
+    "BTMenu": "ImageView",
+    "LLItemList": "LinearLayout",
+    "TVTitle": "TextView"
+   },
+   "root": "FrameLayout"
+  },
+  "layout/task_manager_panel_item.xml": {
+   "ids": {
+    "ImageView": "ImageView",
+    "TextView": "TextView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/touchpad_help_dialog.xml": {
+   "ids": {},
+   "root": "ScrollView"
+  },
+  "layout/virgl_config_dialog.xml": {
+   "ids": {
+    "CBDisableVertexArrayBGRA": "CheckBox",
+    "SVersion": "Spinner"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/vkd3d_config_dialog.xml": {
+   "ids": {
+    "SFeatureLevel": "Spinner",
+    "SVersion": "Spinner",
+    "VKD3DToolbox": "LinearLayout"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/vortek_config_dialog.xml": {
+   "ids": {
+    "CBPerformanceHints": "CheckBox",
+    "MSCBExposedExtensions": "com.winlator.widget.MultiSelectionComboBox",
+    "SImageCacheSize": "Spinner",
+    "SMaxDeviceMemory": "Spinner",
+    "SResourceMemoryType": "Spinner",
+    "SVkMaxVersion": "Spinner"
+   },
+   "root": "ScrollView"
+  },
+  "layout/wincomponent_list_item.xml": {
+   "ids": {
+    "Spinner": "Spinner",
+    "TextView": "TextView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/wine_debug_channel_list_item.xml": {
+   "ids": {
+    "BTAdd": "ImageView",
+    "BTRemove": "ImageView",
+    "BTReset": "ImageView",
+    "TextView": "TextView"
+   },
+   "root": "LinearLayout"
+  },
+  "layout/wine_install_dialog.xml": {
+   "ids": {
+    "ETSize": "EditText",
+    "ETVersion": "EditText"
+   },
+   "root": "ScrollView"
+  },
+  "layout/wined3d_config_dialog.xml": {
+   "ids": {
+    "CBCSMT": "CheckBox",
+    "CBStrictShaderMath": "CheckBox",
+    "SDDrawWrapper": "Spinner",
+    "SGPUName": "Spinner",
+    "SOffscreenRenderingMode": "Spinner",
+    "SRenderer": "Spinner",
+    "SVersion": "Spinner",
+    "SVideoMemorySize": "Spinner",
+    "WineD3DToolbox": "LinearLayout"
+   },
+   "root": "ScrollView"
+  },
+  "layout/xserver_display_activity.xml": {
+   "ids": {
+    "DrawerLayout": "androidx.drawerlayout.widget.DrawerLayout",
+    "FLXServerDisplay": "FrameLayout",
+    "NavigationView": "com.google.android.material.navigation.NavigationView"
+   },
+   "root": "androidx.drawerlayout.widget.DrawerLayout"
+  }
+ },
+ "menus": {
+  "menu/container_file_manager_menu.xml": [
+   {
+    "icon": "@drawable/icon_action_bar_home",
+    "id": "@+id/menu_item_home",
+    "title": "@string/home"
+   },
+   {
+    "icon": "@drawable/icon_action_bar_new_folder",
+    "id": "@+id/menu_item_new_folder",
+    "title": "@string/new_folder"
+   },
+   {
+    "icon": "@drawable/icon_action_bar_list",
+    "id": "@+id/menu_item_view_style",
+    "title": "@string/view_style"
+   }
+  ],
+  "menu/container_popup_menu.xml": [
+   {
+    "icon": "@drawable/icon_popup_menu_file_manager",
+    "id": "@+id/menu_item_file_manager",
+    "title": "@string/file_manager"
+   },
+   {
+    "icon": "@drawable/icon_popup_menu_edit",
+    "id": "@+id/menu_item_edit",
+    "title": "@string/edit"
+   },
+   {
+    "icon": "@drawable/icon_popup_menu_duplicate",
+    "id": "@+id/menu_item_duplicate",
+    "title": "@string/duplicate"
+   },
+   {
+    "icon": "@drawable/icon_popup_menu_remove",
+    "id": "@+id/menu_item_remove",
+    "title": "@string/remove"
+   },
+   {
+    "icon": "@drawable/icon_popup_menu_info",
+    "id": "@+id/menu_item_info",
+    "title": "@string/storage_info"
+   }
+  ],
+  "menu/containers_menu.xml": [
+   {
+    "icon": "@drawable/icon_action_bar_add",
+    "id": "@+id/menu_item_add",
+    "title": "@string/add"
+   }
+  ],
+  "menu/drive_search_popup_menu.xml": [
+   {
+    "icon": "@drawable/icon_popup_menu_folder_open",
+    "id": "@+id/menu_item_open_directory",
+    "title": "@string/open_directory"
+   },
+   {
+    "icon": "@drawable/icon_popup_menu_folder_list",
+    "id": "@+id/menu_item_locations",
+    "title": "@string/locations"
+   },
+   {
+    "icon": null,
+    "id": "@+id/menu_item_downloads",
+    "title": "@string/downloads"
+   },
+   {
+    "icon": null,
+    "id": "@+id/menu_item_internal_storage",
+    "title": "@string/internal_storage"
+   }
+  ],
+  "menu/extra_args_popup_menu.xml": [
+   {
+    "icon": null,
+    "id": null,
+    "title": "-force-gfx-direct"
+   },
+   {
+    "icon": null,
+    "id": null,
+    "title": "-force-d3d11-singlethreaded"
+   },
+   {
+    "icon": null,
+    "id": null,
+    "title": "-force-dx9"
+   },
+   {
+    "icon": null,
+    "id": null,
+    "title": "-force-d3d9"
+   },
+   {
+    "icon": null,
+    "id": null,
+    "title": "-force-d3d11"
+   },
+   {
+    "icon": null,
+    "id": null,
+    "title": "/d3d9"
+   }
+  ],
+  "menu/file_manager_popup_menu.xml": [
+   {
+    "icon": "@drawable/icon_popup_menu_settings",
+    "id": "@+id/menu_item_settings",
+    "title": "@string/settings"
+   },
+   {
+    "icon": "@drawable/icon_popup_menu_copy",
+    "id": "@+id/menu_item_copy",
+    "title": "@string/copy"
+   },
+   {
+    "icon": "@drawable/icon_popup_menu_cut",
+    "id": "@+id/menu_item_cut",
+    "title": "@string/cut"
+   },
+   {
+    "icon": "@drawable/icon_popup_menu_remove",
+    "id": "@+id/menu_item_remove",
+    "title": "@string/remove"
+   },
+   {
+    "icon": "@drawable/icon_popup_menu_edit",
+    "id": "@+id/menu_item_rename",
+    "title": "@string/rename"
+   },
+   {
+    "icon": "@drawable/icon_popup_menu_add_favorite",
+    "id": "@+id/menu_item_add_favorite",
+    "title": "@string/add_to_favorites"
+   },
+   {
+    "icon": "@drawable/icon_popup_menu_info",
+    "id": "@+id/menu_item_info",
+    "title": "@string/information"
+   }
+  ],
+  "menu/main_menu.xml": [
+   {
+    "icon": "@drawable/icon_shortcut",
+    "id": "@+id/menu_item_shortcuts",
+    "title": "@string/shortcuts"
+   },
+   {
+    "icon": "@drawable/icon_container",
+    "id": "@+id/menu_item_containers",
+    "title": "@string/containers"
+   },
+   {
+    "icon": "@drawable/icon_input_controls",
+    "id": "@+id/menu_item_input_controls",
+    "title": "@string/input_controls"
+   },
+   {
+    "icon": "@drawable/icon_settings",
+    "id": "@+id/menu_item_settings",
+    "title": "@string/settings"
+   },
+   {
+    "icon": "@drawable/icon_about",
+    "id": "@+id/menu_item_about",
+    "title": "@string/about"
+   }
+  ],
+  "menu/open_file_popup_menu.xml": [
+   {
+    "icon": "@drawable/icon_popup_menu_folder_open",
+    "id": "@+id/menu_item_open_file",
+    "title": "@string/open_file"
+   },
+   {
+    "icon": "@drawable/icon_popup_menu_download",
+    "id": "@+id/menu_item_download_file",
+    "title": "@string/download_file"
+   }
+  ],
+  "menu/process_popup_menu.xml": [
+   {
+    "icon": "@drawable/icon_popup_menu_cpu",
+    "id": "@+id/menu_item_process_affinity",
+    "title": "@string/processor_affinity"
+   },
+   {
+    "icon": "@drawable/icon_popup_menu_bring_to_front",
+    "id": "@+id/menu_item_bring_to_front",
+    "title": "@string/bring_to_front"
+   },
+   {
+    "icon": "@drawable/icon_popup_menu_remove",
+    "id": "@+id/menu_item_end_process",
+    "title": "@string/end_process"
+   }
+  ],
+  "menu/shortcuts_menu.xml": [
+   {
+    "icon": "@drawable/icon_action_bar_new_folder",
+    "id": "@+id/menu_item_new_folder",
+    "title": "@string/new_folder"
+   },
+   {
+    "icon": "@drawable/icon_action_bar_list",
+    "id": "@+id/menu_item_view_style",
+    "title": "@string/view_style"
+   }
+  ],
+  "menu/xserver_menu.xml": [
+   {
+    "icon": "@drawable/icon_keyboard",
+    "id": "@+id/menu_item_keyboard",
+    "title": "@string/keyboard"
+   },
+   {
+    "icon": "@drawable/icon_input_controls",
+    "id": "@+id/menu_item_input_controls",
+    "title": "@string/input_controls"
+   },
+   {
+    "icon": "@drawable/icon_fullscreen",
+    "id": "@+id/menu_item_toggle_fullscreen",
+    "title": "@string/toggle_fullscreen"
+   },
+   {
+    "icon": "@drawable/icon_task_manager",
+    "id": "@+id/menu_item_task_manager",
+    "title": "@string/task_manager"
+   },
+   {
+    "icon": "@drawable/icon_active_windows",
+    "id": "@+id/menu_item_active_windows",
+    "title": "@string/active_windows"
+   },
+   {
+    "icon": "@drawable/icon_magnifier",
+    "id": "@+id/menu_item_magnifier",
+    "title": "@string/magnifier"
+   },
+   {
+    "icon": "@drawable/icon_screen_effect",
+    "id": "@+id/menu_item_screen_effect",
+    "title": "@string/screen_effect"
+   },
+   {
+    "icon": "@drawable/icon_pip_mode",
+    "id": "@+id/menu_item_pip_mode",
+    "title": "@string/pip_mode"
+   },
+   {
+    "icon": "@drawable/icon_debug",
+    "id": "@+id/menu_item_logs",
+    "title": "@string/logs"
+   },
+   {
+    "icon": "@drawable/icon_cpu",
+    "id": "@+id/menu_item_benchmark",
+    "title": "@string/benchmark_toggle"
+   },
+   {
+    "icon": "@drawable/icon_help",
+    "id": "@+id/menu_item_touchpad_help",
+    "title": "@string/touchpad_help"
+   },
+   {
+    "icon": "@drawable/icon_exit",
+    "id": "@+id/menu_item_exit",
+    "title": "@string/exit"
+   }
+  ]
+ }
+}

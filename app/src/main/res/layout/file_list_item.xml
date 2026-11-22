@@ -2,9 +2,14 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginLeft="6dp"
+    android:layout_marginRight="6dp"
+    android:layout_marginTop="4dp"
+    android:layout_marginBottom="4dp"
+    android:background="@drawable/lv_bg_card"
     android:orientation="horizontal"
-    android:paddingLeft="16dp"
-    android:paddingRight="16dp"
+    android:paddingLeft="12dp"
+    android:paddingRight="10dp"
     android:gravity="center_vertical">
 
     <LinearLayout
@@ -14,15 +19,17 @@
         android:clickable="true"
         android:focusable="true"
         android:layout_marginRight="12dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <ImageView
             android:id="@+id/ImageView"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginRight="8dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp" />
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginRight="12dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
+            android:scaleType="fitCenter" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -35,8 +42,8 @@
                 android:id="@+id/TVTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="?attr/colorPrimaryVariant"
-                android:textStyle="bold"
+                android:textSize="15sp"
+                android:fontFamily="sans-serif-medium"
                 android:ellipsize="end"
                 android:maxLines="1" />
 
@@ -44,6 +51,7 @@
                 android:id="@+id/TVSubtitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textSize="12sp"
                 android:textColor="?attr/colorSecondaryText"
                 android:ellipsize="end"
                 android:maxLines="1" />
@@ -53,18 +61,20 @@
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
         <ImageView
-            style="@style/LeftSideButton"
-            android:id="@+id/BTRun"
-            android:layout_marginRight="2dp"
-            android:src="@drawable/icon_run" />
-
-        <ImageView
-            style="@style/RightSideButton"
+            style="@style/LvGhostButton"
             android:id="@+id/BTMenu"
-            android:layout_marginLeft="2dp"
+            android:layout_marginRight="6dp"
+            android:contentDescription="@string/settings"
             android:src="@drawable/icon_list_item_menu" />
+
+        <ImageView
+            style="@style/LvRunButton"
+            android:id="@+id/BTRun"
+            android:contentDescription="@string/run"
+            android:src="@drawable/icon_run" />
     </LinearLayout>
 </LinearLayout>

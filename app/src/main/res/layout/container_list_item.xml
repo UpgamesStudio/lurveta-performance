@@ -1,21 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- LURVETA container card: icon tile, name, secondary menu and primary "play". -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginLeft="16dp"
+    android:layout_marginRight="16dp"
+    android:layout_marginTop="5dp"
+    android:layout_marginBottom="5dp"
+    android:minHeight="76dp"
+    android:background="@drawable/lv_bg_card"
     android:orientation="horizontal"
-    android:paddingLeft="16dp"
-    android:paddingRight="16dp"
+    android:paddingLeft="12dp"
+    android:paddingRight="10dp"
     android:gravity="center_vertical">
 
     <ImageView
         android:id="@+id/ImageView"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:layout_marginRight="16dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
-        app:tint="?attr/colorPrimaryVariant" />
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginRight="14dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/lv_icon_tile"
+        android:padding="11dp"
+        app:tint="?attr/colorAccent" />
 
     <TextView
         android:id="@+id/TVTitle"
@@ -23,24 +32,28 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:gravity="center_vertical"
+        android:textSize="16sp"
+        android:fontFamily="sans-serif-medium"
         android:ellipsize="end"
         android:maxLines="1" />
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
         <ImageView
-            style="@style/LeftSideButton"
-            android:id="@+id/BTRun"
-            android:layout_marginRight="2dp"
-            android:src="@drawable/icon_run" />
-
-        <ImageView
-            style="@style/RightSideButton"
+            style="@style/LvGhostButton"
             android:id="@+id/BTMenu"
-            android:layout_marginLeft="2dp"
+            android:layout_marginRight="6dp"
+            android:contentDescription="@string/settings"
             android:src="@drawable/icon_list_item_menu" />
+
+        <ImageView
+            style="@style/LvRunButton"
+            android:id="@+id/BTRun"
+            android:contentDescription="@string/run"
+            android:src="@drawable/icon_run" />
     </LinearLayout>
 </LinearLayout>

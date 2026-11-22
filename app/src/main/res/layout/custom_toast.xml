@@ -4,21 +4,24 @@
     android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="10dp"
+    android:paddingLeft="14dp"
+    android:paddingRight="18dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp"
     android:gravity="center_vertical"
     android:background="@drawable/custom_toast_background">
 
     <ImageView
         android:src="@drawable/icon_info"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:layout_marginRight="10dp"
-        app:tint="?attr/colorAccent" />
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginRight="12dp"
+        app:tint="@color/lv_cyan" />
 
     <TextView
         android:id="@+id/TextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="16dp"
-        android:textColor="#ffffff" />
+        android:textSize="15sp"
+        android:textColor="#EDF2F7" />
 </LinearLayout>

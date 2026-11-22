@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LURVETA icon system (tools/ui-audit/gen_icons.py). Original artwork. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path android:pathData="M6.5,2.5h7.3l5.2,5.2V19.3a2.2,2.2 0 0,1 -2.2,2.2H6.5a2.2,2.2 0 0,1 -2.2,-2.2V4.7A2.2,2.2 0 0,1 6.5,2.5Z" android:fillColor="#243142" />
+    <path android:pathData="M6.5,2.5h7.3l5.2,5.2V19.3a2.2,2.2 0 0,1 -2.2,2.2H6.5a2.2,2.2 0 0,1 -2.2,-2.2V4.7A2.2,2.2 0 0,1 6.5,2.5Z" android:strokeColor="#3A4A5E" android:strokeWidth="1" />
+    <path android:pathData="M13.8,2.5v3.4a1.8,1.8 0 0,0 1.8,1.8h3.4Z" android:fillColor="#3A4A5E" />
+    <path android:pathData="M7.95,11h8.1a0.65,0.65 0 0,1 0.65,0.65v0a0.65,0.65 0 0,1 -0.65,0.65h-8.1a0.65,0.65 0 0,1 -0.65,-0.65v0a0.65,0.65 0 0,1 0.65,-0.65Z" android:fillColor="#D8E3EE" />
+    <path android:pathData="M7.95,14h8.1a0.65,0.65 0 0,1 0.65,0.65v0a0.65,0.65 0 0,1 -0.65,0.65h-8.1a0.65,0.65 0 0,1 -0.65,-0.65v0a0.65,0.65 0 0,1 0.65,-0.65Z" android:fillColor="#D8E3EE" />
+    <path android:pathData="M7.95,17h4.7a0.65,0.65 0 0,1 0.65,0.65v0a0.65,0.65 0 0,1 -0.65,0.65h-4.7a0.65,0.65 0 0,1 -0.65,-0.65v0a0.65,0.65 0 0,1 0.65,-0.65Z" android:fillColor="#00C8F5" />
+</vector>

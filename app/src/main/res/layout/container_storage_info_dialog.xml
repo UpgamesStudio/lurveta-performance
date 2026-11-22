@@ -74,7 +74,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     app:trackThickness="16dp"
-                    app:trackColor="#bdbdbd"
+                    app:trackColor="?attr/lvStrokeStrong"
                     app:indicatorColor="?attr/colorAccent"
                     app:indicatorSize="120dp"
                     android:layout_gravity="center" />
@@ -92,7 +92,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="12dp"
                 android:layout_marginTop="8dp"
-                android:textColor="#bdbdbd"
+                android:textColor="?attr/lvStrokeStrong"
                 android:text="@string/estimated_used_space" />
         </LinearLayout>
     </LinearLayout>

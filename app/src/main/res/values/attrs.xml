@@ -11,6 +11,20 @@
     <attr name="toolboxBackground" format="reference" />
     <attr name="preloaderBackground" format="reference" />
     <attr name="progressBarIndeterminateImage" format="reference" />
+    <!-- LURVETA design system tokens (resolved per theme, see styles.xml). -->
+    <attr name="lvSurfaceCard" format="color" />
+    <attr name="lvSurfaceRaised" format="color" />
+    <attr name="lvSurfaceInput" format="color" />
+    <attr name="lvSurfacePressed" format="color" />
+    <attr name="lvStroke" format="color" />
+    <attr name="lvStrokeStrong" format="color" />
+    <attr name="lvTextTertiary" format="color" />
+    <attr name="lvIconTint" format="color" />
+    <attr name="lvAccentSoft" format="color" />
+    <attr name="lvAccentSoftStrong" format="color" />
+    <attr name="lvOnAccent" format="color" />
+    <attr name="lvHeaderBackground" format="color" />
+    <attr name="lvDialogBackground" format="reference" />
     <declare-styleable name="NumberPicker">
         <attr name="value" />
         <attr name="minValue" />

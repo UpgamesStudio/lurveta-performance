@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Indeterminate loader: cyan arc on a faint ring. ProgressBar drives the rotation level. -->
+<rotate xmlns:android="http://schemas.android.com/apk/res/android" android:fromDegrees="0" android:toDegrees="1080" android:pivotX="50%" android:pivotY="50%">
+    <layer-list>
+        <item>
+            <shape android:shape="ring" android:innerRadiusRatio="2.6" android:thicknessRatio="14" android:useLevel="false">
+                <solid android:color="#2400C8F5" />
+            </shape>
+        </item>
+        <item>
+            <shape android:shape="ring" android:innerRadiusRatio="2.6" android:thicknessRatio="14" android:useLevel="false">
+                <gradient android:type="sweep" android:startColor="#0000C8F5" android:centerColor="#8000C8F5" android:endColor="#FF00C8F5" />
+            </shape>
+        </item>
+    </layer-list>
+</rotate>

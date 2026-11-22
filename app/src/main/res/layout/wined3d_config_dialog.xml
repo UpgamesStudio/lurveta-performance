@@ -9,8 +9,7 @@
         android:orientation="vertical">
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/version" />
 
         <LinearLayout
@@ -44,8 +43,7 @@
         </LinearLayout>
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/ddraw_wrapper" />
 
         <Spinner
@@ -55,8 +53,7 @@
             android:entries="@array/ddraw_wrapper_entries" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/renderer" />
 
         <Spinner
@@ -66,8 +63,7 @@
             android:entries="@array/wined3d_renderer_entries" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/gpu_name" />
 
         <Spinner
@@ -76,8 +72,7 @@
             android:layout_width="match_parent" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/offscreen_rendering_mode" />
 
         <Spinner
@@ -86,8 +81,7 @@
             android:layout_width="match_parent" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/video_memory_size" />
 
         <Spinner

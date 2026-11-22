@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    LURVETA design system: themes and component styles.
+    Every style name used by layouts and code is kept; only the presentation changes.
+    Tokens live in colors.xml and attrs.xml (lv*). See docs/REDISENO_UI.md.
+-->
 <resources>
+    <!-- ================================================================ THEMES -->
     <style name="AppThemeBase" parent="@style/Theme.AppCompat.Light.NoActionBar">
-        <item name="tabSelectedTextColor">?attr/colorPrimaryText</item>
+        <item name="tabSelectedTextColor">?attr/colorAccent</item>
         <item name="tabTextColor">?attr/colorSecondaryText</item>
         <item name="android:windowBackground">?attr/colorPrimarySurface</item>
         <item name="android:colorBackground">?attr/colorPrimarySurface</item>
@@ -16,46 +22,89 @@
         <item name="android:toolbarStyle">@style/Toolbar</item>
         <item name="toolbarStyle">@style/Toolbar</item>
         <item name="android:spinnerDropDownItemStyle">@style/SpinnerDropDownItem</item>
-        <item name="android:navigationBarColor">#000000</item>
         <item name="android:radioButtonStyle">@style/RadioButton</item>
         <item name="radioButtonStyle">@style/RadioButton</item>
+        <!-- LURVETA -->
+        <item name="android:statusBarColor">?attr/lvHeaderBackground</item>
+        <item name="android:navigationBarColor">?attr/colorPrimarySurface</item>
+        <item name="android:textCursorDrawable">@drawable/lv_edit_cursor</item>
+        <item name="android:textColorHighlight">?attr/lvAccentSoftStrong</item>
+        <item name="android:textColorPrimary">?attr/colorPrimaryText</item>
+        <item name="android:textColorSecondary">?attr/colorSecondaryText</item>
+        <item name="android:textColorHint">?attr/lvTextTertiary</item>
+        <item name="colorControlActivated">?attr/colorAccent</item>
+        <item name="colorControlHighlight">?attr/lvAccentSoft</item>
+        <item name="android:textAppearanceLargePopupMenu">@style/PopupMenuText</item>
+        <item name="android:textAppearanceSmallPopupMenu">@style/PopupMenuText</item>
+        <item name="textAppearanceLargePopupMenu">@style/PopupMenuText</item>
+        <item name="textAppearanceSmallPopupMenu">@style/PopupMenuText</item>
+        <item name="android:scrollbarThumbVertical">@drawable/lv_scrollbar_thumb</item>
+        <item name="android:scrollbarSize">4dp</item>
+        <item name="lvDialogBackground">@drawable/lv_dialog_background</item>
     </style>
+
     <style name="AppThemeLight" parent="@style/AppThemeBase">
-        <item name="colorAccent">#0091B8</item>
-        <item name="colorPrimary">#3A4757</item>
-        <item name="colorPrimaryDark">#232B36</item>
-        <item name="colorControlNormal">#e0e0e0</item>
-        <item name="colorPrimaryText">#424242</item>
-        <item name="colorSecondaryText">#757575</item>
-        <item name="colorPrimarySurface">#fafafa</item>
-        <item name="colorSecondarySurface">#ffffff</item>
-        <item name="colorPrimaryVariant">#3A4757</item>
-        <item name="colorSecondaryVariant">#d3dce0</item>
-        <item name="colorError">#ef5350</item>
-        <item name="popupMenuBackground">@drawable/content_dialog_background_light</item>
-        <item name="toolboxBackground">@drawable/toolbox_light</item>
-        <item name="panelBackground">@drawable/panel_background_light</item>
-        <item name="preloaderBackground">@drawable/preloader_background_light</item>
-        <item name="progressBarIndeterminateImage">@drawable/progress_bar_indeterminate_light</item>
+        <item name="colorAccent">@color/lv_cyan_deep</item>
+        <item name="colorPrimary">@color/lv_header_light</item>
+        <item name="colorPrimaryDark">@color/lv_header_light</item>
+        <item name="colorControlNormal">@color/lv_l_text_tertiary</item>
+        <item name="colorPrimaryText">@color/lv_l_text_primary</item>
+        <item name="colorSecondaryText">@color/lv_l_text_secondary</item>
+        <item name="colorPrimarySurface">@color/lv_l_bg</item>
+        <item name="colorSecondarySurface">@color/lv_l_surface_2</item>
+        <item name="colorPrimaryVariant">@color/lv_l_text_secondary</item>
+        <item name="colorSecondaryVariant">@color/lv_l_stroke</item>
+        <item name="colorError">@color/lv_danger</item>
+        <item name="popupMenuBackground">@drawable/lv_popup_background</item>
+        <item name="toolboxBackground">@drawable/lv_toolbox</item>
+        <item name="panelBackground">@drawable/lv_panel_background</item>
+        <item name="preloaderBackground">@drawable/lv_preloader_background</item>
+        <item name="progressBarIndeterminateImage">@drawable/lv_spinner</item>
+        <item name="lvSurfaceCard">@color/lv_l_surface_1</item>
+        <item name="lvSurfaceRaised">@color/lv_l_surface_2</item>
+        <item name="lvSurfaceInput">@color/lv_l_surface_3</item>
+        <item name="lvSurfacePressed">@color/lv_l_surface_4</item>
+        <item name="lvStroke">@color/lv_l_stroke</item>
+        <item name="lvStrokeStrong">@color/lv_l_stroke_strong</item>
+        <item name="lvTextTertiary">@color/lv_l_text_tertiary</item>
+        <item name="lvIconTint">@color/lv_l_text_secondary</item>
+        <item name="lvAccentSoft">#1F0091B8</item>
+        <item name="lvAccentSoftStrong">#380091B8</item>
+        <item name="lvOnAccent">#FFFFFF</item>
+        <item name="lvHeaderBackground">@color/lv_header_light</item>
     </style>
+
     <style name="AppThemeDark" parent="@style/AppThemeBase">
-        <item name="colorAccent">#00C8F5</item>
-        <item name="colorPrimary">#232B36</item>
-        <item name="colorPrimaryDark">#161C24</item>
-        <item name="colorControlNormal">#616161</item>
-        <item name="colorPrimaryText">#fafafa</item>
-        <item name="colorSecondaryText">#9e9e9e</item>
-        <item name="colorPrimarySurface">#0F141B</item>
-        <item name="colorSecondarySurface">#1C232D</item>
-        <item name="colorPrimaryVariant">#2E3A48</item>
-        <item name="colorSecondaryVariant">#2A3441</item>
-        <item name="colorError">#ef5350</item>
-        <item name="popupMenuBackground">@drawable/content_dialog_background_dark</item>
-        <item name="toolboxBackground">@drawable/toolbox_dark</item>
-        <item name="panelBackground">@drawable/panel_background_dark</item>
-        <item name="preloaderBackground">@drawable/preloader_background_dark</item>
-        <item name="progressBarIndeterminateImage">@drawable/progress_bar_indeterminate_dark</item>
+        <item name="colorAccent">@color/lv_cyan</item>
+        <item name="colorPrimary">@color/lv_header</item>
+        <item name="colorPrimaryDark">@color/lv_header</item>
+        <item name="colorControlNormal">@color/lv_d_text_tertiary</item>
+        <item name="colorPrimaryText">@color/lv_d_text_primary</item>
+        <item name="colorSecondaryText">@color/lv_d_text_secondary</item>
+        <item name="colorPrimarySurface">@color/lv_d_bg</item>
+        <item name="colorSecondarySurface">@color/lv_d_surface_2</item>
+        <item name="colorPrimaryVariant">@color/lv_d_text_secondary</item>
+        <item name="colorSecondaryVariant">@color/lv_d_stroke</item>
+        <item name="colorError">@color/lv_danger</item>
+        <item name="popupMenuBackground">@drawable/lv_popup_background</item>
+        <item name="toolboxBackground">@drawable/lv_toolbox</item>
+        <item name="panelBackground">@drawable/lv_panel_background</item>
+        <item name="preloaderBackground">@drawable/lv_preloader_background</item>
+        <item name="progressBarIndeterminateImage">@drawable/lv_spinner</item>
+        <item name="lvSurfaceCard">@color/lv_d_surface_1</item>
+        <item name="lvSurfaceRaised">@color/lv_d_surface_2</item>
+        <item name="lvSurfaceInput">@color/lv_d_surface_3</item>
+        <item name="lvSurfacePressed">@color/lv_d_surface_4</item>
+        <item name="lvStroke">@color/lv_d_stroke</item>
+        <item name="lvStrokeStrong">@color/lv_d_stroke_strong</item>
+        <item name="lvTextTertiary">@color/lv_d_text_tertiary</item>
+        <item name="lvIconTint">@color/lv_d_text_secondary</item>
+        <item name="lvAccentSoft">@color/lv_cyan_soft</item>
+        <item name="lvAccentSoftStrong">@color/lv_cyan_soft_strong</item>
+        <item name="lvOnAccent">@color/lv_on_cyan</item>
+        <item name="lvHeaderBackground">@color/lv_header</item>
     </style>
+
     <!-- LURVETA: cold-start theme of the launcher activity; MainActivity switches to the
          regular theme in onCreate (AppUtils.setActivityTheme), so no delay is introduced. -->
     <style name="LaunchTheme" parent="@style/AppThemeDark">
@@ -71,34 +120,83 @@
         <item name="android:windowTranslucentStatus">true</item>
         <item name="android:windowTranslucentNavigation">true</item>
     </style>
+
+    <!-- ================================================================ TYPOGRAPHY -->
+    <style name="TextView" parent="@android:style/Widget.TextView">
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">?attr/colorPrimaryText</item>
+    </style>
+    <style name="TitleTextAppearance" parent="android:TextAppearance">
+        <item name="android:textSize">20sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0.01</item>
+        <item name="android:textColor">@color/lv_on_header</item>
+    </style>
+    <style name="PopupMenuText" parent="@android:style/TextAppearance.Widget.PopupMenu.Large">
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">?attr/colorPrimaryText</item>
+    </style>
+    <!-- Small uppercase label above a field. -->
+    <style name="LvFieldLabel">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">12dp</item>
+        <item name="android:layout_marginBottom">6dp</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0.04</item>
+        <item name="android:textColor">?attr/colorSecondaryText</item>
+    </style>
+    <!-- Screen headline (e.g. empty states, about). -->
+    <style name="LvHeadline">
+        <item name="android:textSize">22sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">?attr/colorPrimaryText</item>
+    </style>
+    <!-- Empty state: icon on top, calm secondary text. -->
+    <style name="LvEmptyState">
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">?attr/colorSecondaryText</item>
+        <item name="android:drawablePadding">14dp</item>
+        <item name="android:drawableTint">?attr/lvTextTertiary</item>
+        <item name="android:padding">32dp</item>
+    </style>
+
+    <!-- ================================================================ FIELDS -->
     <style name="ComboBox">
         <item name="android:layout_width">192dp</item>
-        <item name="android:layout_height">42dp</item>
+        <item name="android:layout_height">46dp</item>
+        <item name="android:minHeight">46dp</item>
         <item name="android:focusable">true</item>
         <item name="android:clickable">true</item>
-        <item name="android:textSize">16sp</item>
+        <item name="android:textSize">15sp</item>
         <item name="android:textColor">?attr/colorPrimaryText</item>
         <item name="android:gravity">left|center_vertical</item>
-        <item name="android:paddingLeft">12dp</item>
-        <item name="android:paddingRight">36dp</item>
+        <item name="android:paddingLeft">14dp</item>
+        <item name="android:paddingRight">38dp</item>
         <item name="android:paddingTop">0dp</item>
         <item name="android:paddingBottom">0dp</item>
+        <item name="android:layout_marginTop">2dp</item>
+        <item name="android:layout_marginBottom">2dp</item>
         <item name="android:maxLines">1</item>
         <item name="android:ellipsize">end</item>
         <item name="android:spinnerMode">dropdown</item>
         <item name="android:background">@drawable/combo_box</item>
         <item name="android:popupBackground">?attr/popupMenuBackground</item>
+        <item name="android:dropDownVerticalOffset">4dp</item>
     </style>
     <style name="MultiSelectionComboBox">
         <item name="android:layout_width">192dp</item>
-        <item name="android:layout_height">42dp</item>
+        <item name="android:layout_height">46dp</item>
+        <item name="android:minHeight">46dp</item>
         <item name="android:focusable">true</item>
         <item name="android:clickable">true</item>
-        <item name="android:textSize">16sp</item>
+        <item name="android:textSize">15sp</item>
         <item name="android:textColor">?attr/colorPrimaryText</item>
         <item name="android:gravity">left|center_vertical</item>
-        <item name="android:paddingLeft">12dp</item>
-        <item name="android:paddingRight">36dp</item>
+        <item name="android:paddingLeft">14dp</item>
+        <item name="android:paddingRight">38dp</item>
         <item name="android:paddingTop">0dp</item>
         <item name="android:paddingBottom">0dp</item>
         <item name="android:maxLines">1</item>
@@ -106,80 +204,107 @@
     </style>
     <style name="SpinnerDropDownItem" parent="@android:style/Widget.Holo.DropDownItem.Spinner">
         <item name="android:textColor">?attr/colorPrimaryText</item>
-    </style>
-    <style name="ListPopupWindow" parent="@android:style/Widget.ListPopupWindow">
-        <item name="android:popupBackground">?attr/popupMenuBackground</item>
-        <item name="android:dropDownHorizontalOffset">-4dp</item>
-    </style>
-    <style name="PopupWindow" parent="@android:style/Widget.PopupWindow">
-        <item name="android:popupBackground">?attr/popupMenuBackground</item>
-        <item name="android:dropDownHorizontalOffset">-4dp</item>
-    </style>
-    <style name="PopupMenu" parent="@android:style/Widget.PopupMenu">
-        <item name="android:popupBackground">?attr/popupMenuBackground</item>
-    </style>
-    <style name="ContentDialog" parent="@android:style/Theme.Dialog">
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowFullscreen">true</item>
-        <item name="android:windowBackground">?attr/popupMenuBackground</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">16dp</item>
+        <item name="android:minHeight">46dp</item>
     </style>
     <style name="EditText">
         <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">42dp</item>
-        <item name="android:textSize">16sp</item>
+        <item name="android:layout_height">46dp</item>
+        <item name="android:minHeight">46dp</item>
+        <item name="android:textSize">15sp</item>
         <item name="android:textColor">?attr/colorPrimaryText</item>
-        <item name="android:textColorHint">?attr/colorSecondaryText</item>
+        <item name="android:textColorHint">?attr/lvTextTertiary</item>
         <item name="android:gravity">left|center_vertical</item>
-        <item name="android:paddingLeft">12dp</item>
-        <item name="android:paddingRight">12dp</item>
+        <item name="android:paddingLeft">14dp</item>
+        <item name="android:paddingRight">14dp</item>
         <item name="android:paddingTop">0dp</item>
         <item name="android:paddingBottom">0dp</item>
+        <item name="android:layout_marginTop">2dp</item>
+        <item name="android:layout_marginBottom">2dp</item>
         <item name="android:maxLines">1</item>
         <item name="android:inputType">text</item>
         <item name="android:background">@drawable/edit_text</item>
     </style>
-    <style name="TextView" parent="@android:style/Widget.TextView">
-        <item name="android:textSize">16sp</item>
-        <item name="android:textColor">?attr/colorPrimaryText</item>
-    </style>
     <style name="CheckBox" parent="@android:style/Widget.CompoundButton.CheckBox">
-        <item name="android:textSize">16sp</item>
+        <item name="android:textSize">15sp</item>
         <item name="android:textColor">?attr/colorPrimaryText</item>
+        <item name="android:minHeight">40dp</item>
+        <item name="android:paddingLeft">6dp</item>
     </style>
     <style name="RadioButton" parent="@android:style/Widget.CompoundButton.RadioButton">
-        <item name="android:textSize">16sp</item>
+        <item name="android:textSize">15sp</item>
         <item name="android:textColor">?attr/colorPrimaryText</item>
-        <item name="android:paddingRight">8dp</item>
+        <item name="android:paddingLeft">6dp</item>
+        <item name="android:paddingRight">16dp</item>
+        <item name="android:minHeight">40dp</item>
     </style>
-    <style name="TitleTextAppearance" parent="android:TextAppearance">
-        <item name="android:textSize">18sp</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:textColor">?attr/colorPrimaryText</item>
+
+    <!-- ================================================================ POPUPS -->
+    <style name="ListPopupWindow" parent="@android:style/Widget.ListPopupWindow">
+        <item name="android:popupBackground">?attr/popupMenuBackground</item>
+        <item name="android:dropDownHorizontalOffset">0dp</item>
+        <item name="android:dropDownVerticalOffset">4dp</item>
+        <item name="android:popupElevation">12dp</item>
     </style>
+    <style name="PopupWindow" parent="@android:style/Widget.PopupWindow">
+        <item name="android:popupBackground">?attr/popupMenuBackground</item>
+        <item name="android:dropDownHorizontalOffset">0dp</item>
+        <item name="android:popupElevation">12dp</item>
+    </style>
+    <style name="PopupMenu" parent="@android:style/Widget.PopupMenu">
+        <item name="android:popupBackground">?attr/popupMenuBackground</item>
+        <item name="android:popupElevation">12dp</item>
+    </style>
+    <style name="ContentDialog" parent="@android:style/Theme.Dialog">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowBackground">?attr/lvDialogBackground</item>
+        <item name="android:backgroundDimAmount">0.72</item>
+        <item name="android:windowAnimationStyle">@style/LvDialogAnimation</item>
+        <item name="android:windowElevation">16dp</item>
+    </style>
+    <style name="LvDialogAnimation">
+        <item name="android:windowEnterAnimation">@anim/lv_dialog_enter</item>
+        <item name="android:windowExitAnimation">@anim/lv_dialog_exit</item>
+    </style>
+
+    <!-- ================================================================ TOOLBAR -->
     <style name="Toolbar" parent="@android:style/Widget.Toolbar">
-        <item name="android:background">?attr/colorPrimary</item>
-        <item name="titleTextColor">#ffffff</item>
+        <item name="android:background">?attr/lvHeaderBackground</item>
+        <item name="titleTextColor">@color/lv_on_header</item>
         <item name="titleTextAppearance">@style/TitleTextAppearance</item>
+        <item name="android:elevation">0dp</item>
+        <item name="contentInsetStartWithNavigation">8dp</item>
     </style>
+
+    <!-- ================================================================ BUTTONS -->
     <style name="BaseButton">
         <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">42dp</item>
+        <item name="android:layout_height">46dp</item>
+        <item name="android:minHeight">46dp</item>
         <item name="android:focusable">true</item>
         <item name="android:clickable">true</item>
-        <item name="android:textSize">16sp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0.02</item>
         <item name="android:lines">1</item>
         <item name="android:gravity">center</item>
-        <item name="android:paddingLeft">24dp</item>
-        <item name="android:paddingRight">24dp</item>
+        <item name="android:paddingLeft">22dp</item>
+        <item name="android:paddingRight">22dp</item>
         <item name="android:textAllCaps">false</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:layout_marginLeft">4dp</item>
+        <item name="android:layout_marginRight">4dp</item>
     </style>
     <style name="ButtonNeutral" parent="BaseButton">
         <item name="android:background">@drawable/button_neutral</item>
-        <item name="android:textColor">#ffffff</item>
+        <item name="android:textColor">@color/lv_button_neutral_text</item>
     </style>
     <style name="ButtonPositive" parent="BaseButton">
         <item name="android:background">@drawable/button_positive</item>
-        <item name="android:textColor">#ffffff</item>
+        <item name="android:textColor">@color/lv_button_positive_text</item>
     </style>
     <style name="BaseImageButton">
         <item name="android:layout_width">42dp</item>
@@ -189,117 +314,190 @@
         <item name="android:gravity">center</item>
         <item name="android:scaleType">centerInside</item>
         <item name="android:background">?selectableItemBackgroundBorderless</item>
-        <item name="android:padding">4dp</item>
+        <item name="android:padding">9dp</item>
     </style>
     <style name="ToolButton" parent="BaseImageButton">
         <item name="android:layout_marginLeft">2dp</item>
         <item name="android:layout_marginRight">2dp</item>
-        <item name="android:tint">?attr/colorPrimaryVariant</item>
+        <item name="android:tint">@color/lv_on_header</item>
     </style>
     <style name="ListMenuButton" parent="BaseImageButton">
-        <item name="android:layout_width">34dp</item>
-        <item name="android:layout_height">34dp</item>
-        <item name="android:tint">?attr/colorPrimaryVariant</item>
-        <item name="android:layout_marginLeft">2dp</item>
-        <item name="android:layout_marginRight">2dp</item>
+        <item name="android:layout_width">38dp</item>
+        <item name="android:layout_height">38dp</item>
+        <item name="android:padding">9dp</item>
+        <item name="android:tint">?attr/lvIconTint</item>
+        <item name="android:background">@drawable/lv_btn_ghost</item>
+        <item name="android:layout_marginLeft">1dp</item>
+        <item name="android:layout_marginRight">1dp</item>
     </style>
+    <!-- Primary circular "play" on list items. -->
+    <style name="LvRunButton">
+        <item name="android:layout_width">44dp</item>
+        <item name="android:layout_height">44dp</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:background">@drawable/lv_btn_run</item>
+        <item name="android:tint">?attr/lvOnAccent</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:elevation">2dp</item>
+    </style>
+    <!-- Secondary icon-only action on list items. -->
+    <style name="LvGhostButton">
+        <item name="android:layout_width">44dp</item>
+        <item name="android:layout_height">44dp</item>
+        <item name="android:padding">11dp</item>
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:background">@drawable/lv_btn_ghost</item>
+        <item name="android:tint">?attr/colorSecondaryText</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+    <style name="LvFab">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_gravity">right|bottom</item>
+        <item name="android:layout_margin">20dp</item>
+        <item name="backgroundTint">?attr/colorAccent</item>
+        <item name="tint">?attr/lvOnAccent</item>
+        <item name="rippleColor">#33FFFFFF</item>
+        <item name="elevation">6dp</item>
+        <item name="pressedTranslationZ">4dp</item>
+        <item name="borderWidth">0dp</item>
+    </style>
+
+    <!-- ================================================================ SEPARATORS / GROUPS -->
     <style name="VerticalLine">
-        <item name="android:layout_width">2dp</item>
+        <item name="android:layout_width">1dp</item>
         <item name="android:layout_height">match_parent</item>
-        <item name="android:background">?attr/colorPrimaryVariant</item>
-        <item name="android:layout_marginTop">2dp</item>
-        <item name="android:layout_marginBottom">2dp</item>
-        <item name="android:layout_marginLeft">8dp</item>
-        <item name="android:layout_marginRight">8dp</item>
+        <item name="android:background">?attr/lvStrokeStrong</item>
+        <item name="android:layout_marginTop">6dp</item>
+        <item name="android:layout_marginBottom">6dp</item>
+        <item name="android:layout_marginLeft">6dp</item>
+        <item name="android:layout_marginRight">6dp</item>
     </style>
     <style name="HorizontalLine">
         <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">2dp</item>
-        <item name="android:background">?attr/colorPrimaryVariant</item>
-        <item name="android:layout_marginTop">8dp</item>
-        <item name="android:layout_marginBottom">8dp</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:background">?attr/lvStroke</item>
+        <item name="android:layout_marginTop">12dp</item>
+        <item name="android:layout_marginBottom">12dp</item>
     </style>
     <style name="FieldSeparator">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">1dp</item>
-        <item name="android:background">?attr/colorPrimaryVariant</item>
-        <item name="android:layout_marginTop">8dp</item>
-        <item name="android:layout_marginBottom">8dp</item>
+        <item name="android:background">?attr/lvStroke</item>
+        <item name="android:layout_marginTop">12dp</item>
+        <item name="android:layout_marginBottom">12dp</item>
     </style>
+    <!-- FieldSet + FieldSetLabel = section card with an accent title inside. -->
     <style name="FieldSet">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:background">@drawable/bordered_panel</item>
+        <item name="android:background">@drawable/lv_bg_card</item>
         <item name="android:orientation">vertical</item>
-        <item name="android:paddingLeft">8dp</item>
-        <item name="android:paddingRight">8dp</item>
-        <item name="android:paddingBottom">8dp</item>
-        <item name="android:paddingTop">16dp</item>
-        <item name="android:layout_marginTop">10dp</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">16dp</item>
+        <item name="android:paddingBottom">16dp</item>
+        <item name="android:paddingTop">40dp</item>
+        <item name="android:layout_marginTop">12dp</item>
     </style>
     <style name="FieldSetLabel">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:background">?attr/colorPrimarySurface</item>
+        <item name="android:background">@null</item>
         <item name="android:orientation">vertical</item>
-        <item name="android:paddingLeft">4dp</item>
-        <item name="android:paddingRight">4dp</item>
-        <item name="android:layout_marginLeft">8dp</item>
-        <item name="android:textColor">?attr/colorPrimaryVariant</item>
+        <item name="android:layout_marginLeft">16dp</item>
+        <item name="android:layout_marginTop">28dp</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.12</item>
+        <item name="android:textColor">?attr/colorAccent</item>
     </style>
     <style name="TableHead">
         <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">28dp</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:textColor">#ffffff</item>
-        <item name="android:paddingLeft">4dp</item>
+        <item name="android:layout_height">34dp</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.08</item>
+        <item name="android:textColor">?attr/colorSecondaryText</item>
+        <item name="android:paddingLeft">8dp</item>
         <item name="android:gravity">center_vertical</item>
     </style>
     <style name="TableHeadRightLine">
         <item name="android:layout_width">1dp</item>
         <item name="android:layout_height">match_parent</item>
-        <item name="android:background">#0278b8</item>
+        <item name="android:background">?attr/lvStroke</item>
     </style>
     <style name="TableHeadBottomLine">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">1dp</item>
-        <item name="android:background">#0278b8</item>
+        <item name="android:background">?attr/colorAccent</item>
     </style>
     <style name="TableBodyRightLine">
         <item name="android:layout_width">1dp</item>
         <item name="android:layout_height">match_parent</item>
-        <item name="android:background">?attr/colorControlNormal</item>
+        <item name="android:background">?attr/lvStroke</item>
     </style>
     <style name="HelpButton">
         <item name="android:layout_width">22dp</item>
         <item name="android:layout_height">22dp</item>
-        <item name="android:layout_marginLeft">4dp</item>
+        <item name="android:layout_marginLeft">6dp</item>
         <item name="android:src">@drawable/icon_help</item>
-        <item name="tint">#e0e0e0</item>
+        <item name="tint">?attr/colorSecondaryText</item>
     </style>
     <style name="Toolbox">
         <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">40dp</item>
+        <item name="android:layout_height">46dp</item>
         <item name="android:orientation">horizontal</item>
         <item name="android:gravity">center_vertical</item>
         <item name="android:background">?attr/toolboxBackground</item>
         <item name="android:paddingTop">2dp</item>
         <item name="android:paddingBottom">2dp</item>
-        <item name="android:paddingLeft">8dp</item>
-        <item name="android:paddingRight">8dp</item>
+        <item name="android:paddingLeft">4dp</item>
+        <item name="android:paddingRight">4dp</item>
+        <item name="android:layout_marginLeft">8dp</item>
     </style>
     <style name="LeftSideButton">
-        <item name="android:layout_width">40dp</item>
-        <item name="android:layout_height">36dp</item>
-        <item name="tint">?attr/colorPrimaryVariant</item>
+        <item name="android:layout_width">44dp</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="tint">?attr/colorAccent</item>
         <item name="android:background">@drawable/left_side_button</item>
-        <item name="android:padding">6dp</item>
+        <item name="android:padding">10dp</item>
     </style>
     <style name="RightSideButton">
-        <item name="android:layout_width">40dp</item>
-        <item name="android:layout_height">36dp</item>
-        <item name="tint">?attr/colorPrimaryVariant</item>
+        <item name="android:layout_width">44dp</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="tint">?attr/lvIconTint</item>
         <item name="android:background">@drawable/right_side_button</item>
-        <item name="android:padding">6dp</item>
+        <item name="android:padding">10dp</item>
+    </style>
+
+    <!-- ================================================================ TABS / DRAWER -->
+    <style name="LvTabs">
+        <item name="android:background">@drawable/tab_layout_background</item>
+        <item name="tabIndicator">@drawable/lv_tab_indicator</item>
+        <item name="tabIndicatorColor">?attr/lvAccentSoftStrong</item>
+        <item name="tabIndicatorGravity">stretch</item>
+        <item name="tabIndicatorFullWidth">true</item>
+        <item name="tabTextColor">@color/lv_tab_text</item>
+        <item name="tabSelectedTextColor">?attr/colorAccent</item>
+        <item name="tabRippleColor">@android:color/transparent</item>
+        <item name="tabTextAppearance">@style/LvTabText</item>
+        <item name="tabMinWidth">72dp</item>
+        <item name="tabPaddingStart">14dp</item>
+        <item name="tabPaddingEnd">14dp</item>
+    </style>
+    <style name="LvTabText" parent="TextAppearance.Design.Tab">
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="textAllCaps">false</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+    <style name="LvDrawerItemText" parent="TextAppearance.AppCompat.Body2">
+        <item name="android:textSize">15sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
     </style>
 </resources>

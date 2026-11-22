@@ -1,44 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- LURVETA Performance drawer header. -->
+<!-- LURVETA Performance drawer header (app and in-game menu). -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="124dp"
-    android:background="?attr/colorPrimaryDark"
-    android:orientation="horizontal"
-    android:gravity="bottom|left"
-    android:paddingLeft="12dp"
-    android:paddingBottom="18dp">
+    android:layout_height="wrap_content"
+    android:background="@drawable/lv_drawer_header"
+    android:orientation="vertical"
+    android:paddingLeft="24dp"
+    android:paddingRight="24dp"
+    android:paddingTop="32dp"
+    android:paddingBottom="22dp">
 
     <ImageView
         android:layout_width="52dp"
         android:layout_height="52dp"
+        android:background="@drawable/lv_brand_tile"
+        android:padding="4dp"
         android:scaleType="fitCenter"
-        android:src="@drawable/lurveta_mark" />
+        android:src="@drawable/lurveta_mark"
+        android:contentDescription="@string/app_name" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="LURVETA"
+        android:textColor="@color/lv_on_header"
+        android:textSize="22sp"
+        android:fontFamily="sans-serif-black"
+        android:letterSpacing="0.18" />
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="4dp"
-        android:layout_marginBottom="6dp"
-        android:orientation="vertical">
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="LURVETA"
-            android:textColor="#FFFFFF"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.16" />
+        <View
+            android:layout_width="18dp"
+            android:layout_height="2dp"
+            android:layout_marginRight="8dp"
+            android:background="@drawable/lv_accent_bar" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="PERFORMANCE"
-            android:textColor="#00C8F5"
-            android:textSize="10sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.34" />
+            android:textColor="@color/lv_cyan"
+            android:textSize="11sp"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.38" />
     </LinearLayout>
 </LinearLayout>

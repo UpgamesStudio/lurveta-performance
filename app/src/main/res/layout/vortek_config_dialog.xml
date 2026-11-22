@@ -9,8 +9,7 @@
         android:orientation="vertical">
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/vulkan_version" />
 
         <Spinner
@@ -20,8 +19,7 @@
             android:entries="@array/vk_version_entries" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/max_device_memory" />
 
         <Spinner
@@ -31,8 +29,7 @@
             android:entries="@array/max_device_memory_entries" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/resource_memory_type" />
 
         <Spinner
@@ -42,8 +39,7 @@
             android:entries="@array/resource_memory_type_entries" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/exposed_extensions" />
 
         <com.winlator.widget.MultiSelectionComboBox
@@ -52,8 +48,7 @@
             android:id="@+id/MSCBExposedExtensions" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/image_cache_size" />
 
         <Spinner

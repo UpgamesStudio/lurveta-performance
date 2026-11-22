@@ -1,6 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android" >
-    <item android:state_pressed="true" android:drawable="@drawable/button_neutral_pressed" />
-    <item android:state_focused="true" android:drawable="@drawable/button_neutral_normal" />
-    <item android:drawable="@drawable/button_neutral_normal" />
-</selector>
+<!-- LURVETA secondary button: graphite fill, hairline stroke. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="?attr/lvAccentSoft">
+    <item>
+        <selector>
+            <item android:state_pressed="true">
+                <shape android:shape="rectangle">
+                    <solid android:color="?attr/lvSurfacePressed" />
+                    <stroke android:width="1dp" android:color="?attr/colorAccent" />
+                    <corners android:radius="12dp" />
+                </shape>
+            </item>
+            <item android:state_focused="true">
+                <shape android:shape="rectangle">
+                    <solid android:color="?attr/lvSurfaceInput" />
+                    <stroke android:width="1dp" android:color="?attr/colorAccent" />
+                    <corners android:radius="12dp" />
+                </shape>
+            </item>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="?attr/lvSurfaceInput" />
+                    <stroke android:width="1dp" android:color="?attr/lvStrokeStrong" />
+                    <corners android:radius="12dp" />
+                </shape>
+            </item>
+        </selector>
+    </item>
+</ripple>

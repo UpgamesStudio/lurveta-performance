@@ -1,6 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android" >
-    <item android:state_pressed="true" android:drawable="@drawable/combo_box_pressed" />
-    <item android:state_focused="true" android:drawable="@drawable/combo_box_normal" />
-    <item android:drawable="@drawable/combo_box_normal" />
+<!-- LURVETA select field: input surface + chevron. Also used by ColorPickerView/ImagePickerView. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_enabled="false">
+        <layer-list>
+            <item><shape android:shape="rectangle"><solid android:color="?attr/lvSurfaceCard" /><stroke android:width="1dp" android:color="?attr/lvStroke" /><corners android:radius="12dp" /></shape></item>
+            <item android:gravity="right|center_vertical" android:right="12dp" android:width="18dp" android:height="18dp" android:drawable="@drawable/lv_chevron_down_disabled" />
+        </layer-list>
+    </item>
+    <item android:state_pressed="true">
+        <layer-list>
+            <item><shape android:shape="rectangle"><solid android:color="?attr/lvSurfacePressed" /><stroke android:width="1dp" android:color="?attr/colorAccent" /><corners android:radius="12dp" /></shape></item>
+            <item android:gravity="right|center_vertical" android:right="12dp" android:width="18dp" android:height="18dp" android:drawable="@drawable/lv_chevron_down_accent" />
+        </layer-list>
+    </item>
+    <item android:state_focused="true">
+        <layer-list>
+            <item><shape android:shape="rectangle"><solid android:color="?attr/lvSurfaceInput" /><stroke android:width="1dp" android:color="?attr/colorAccent" /><corners android:radius="12dp" /></shape></item>
+            <item android:gravity="right|center_vertical" android:right="12dp" android:width="18dp" android:height="18dp" android:drawable="@drawable/lv_chevron_down_accent" />
+        </layer-list>
+    </item>
+    <item>
+        <layer-list>
+            <item><shape android:shape="rectangle"><solid android:color="?attr/lvSurfaceInput" /><stroke android:width="1dp" android:color="?attr/lvStroke" /><corners android:radius="12dp" /></shape></item>
+            <item android:gravity="right|center_vertical" android:right="12dp" android:width="18dp" android:height="18dp" android:drawable="@drawable/lv_chevron_down" />
+        </layer-list>
+    </item>
 </selector>

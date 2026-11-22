@@ -13,8 +13,7 @@
         android:paddingRight="8dp">
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/name" />
 
         <LinearLayout
@@ -48,8 +47,7 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    style="@style/LvFieldLabel"
                     android:text="@string/screen_size" />
 
                 <Spinner
@@ -72,8 +70,7 @@
                     android:orientation="vertical">
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        style="@style/LvFieldLabel"
                         android:text="@string/width" />
 
                     <EditText
@@ -100,8 +97,7 @@
                     android:orientation="vertical">
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        style="@style/LvFieldLabel"
                         android:text="@string/height" />
 
                     <EditText
@@ -114,8 +110,7 @@
         </LinearLayout>
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/graphics_driver" />
 
         <LinearLayout
@@ -141,7 +136,7 @@
                 android:layout_height="22dp"
                 android:layout_marginLeft="4dp"
                 android:src="@drawable/icon_help"
-                app:tint="#e0e0e0" />
+                app:tint="?attr/colorSecondaryText" />
         </LinearLayout>
 
         <LinearLayout
@@ -152,8 +147,7 @@
             android:gravity="center_vertical" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LvFieldLabel"
             android:text="@string/audio_driver" />
 
         <LinearLayout
@@ -177,12 +171,11 @@
 
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/TabLayout"
+            style="@style/LvTabs"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="16dp"
             android:layout_marginBottom="4dp"
-            android:background="@drawable/tab_layout_background"
-            app:tabTextColor="?attr/tabTextColor"
             app:tabGravity="center"
             app:tabMode="auto">
 
@@ -220,7 +213,6 @@
 
                 <TextView
                     style="@style/FieldSetLabel"
-                    android:background="?attr/colorSecondarySurface"
                     android:text="@string/directx" />
             </FrameLayout>
 
@@ -235,7 +227,6 @@
 
                 <TextView
                     style="@style/FieldSetLabel"
-                    android:background="?attr/colorSecondarySurface"
                     android:text="@string/general" />
             </FrameLayout>
         </LinearLayout>
@@ -296,7 +287,6 @@
 
                 <TextView
                     style="@style/FieldSetLabel"
-                    android:background="?attr/colorSecondarySurface"
                     android:text="@string/lurveta_profile" />
             </FrameLayout>
 
@@ -307,8 +297,7 @@
 
                 <LinearLayout style="@style/FieldSet">
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        style="@style/LvFieldLabel"
                         android:text="@string/box64_preset" />
 
                     <Spinner
@@ -319,7 +308,6 @@
 
                 <TextView
                     style="@style/FieldSetLabel"
-                    android:background="?attr/colorSecondarySurface"
                     android:text="@string/box64" />
             </FrameLayout>
 
@@ -330,8 +318,7 @@
 
                 <LinearLayout style="@style/FieldSet">
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        style="@style/LvFieldLabel"
                         android:text="@string/profile" />
 
                     <Spinner
@@ -340,8 +327,7 @@
                         android:layout_width="match_parent" />
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        style="@style/LvFieldLabel"
                         android:text="@string/directinput_mapper_type" />
 
                     <Spinner
@@ -353,7 +339,6 @@
 
                 <TextView
                     style="@style/FieldSetLabel"
-                    android:background="?attr/colorSecondarySurface"
                     android:text="@string/input_controls" />
             </FrameLayout>
 
@@ -364,8 +349,7 @@
 
                 <LinearLayout style="@style/FieldSet">
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        style="@style/LvFieldLabel"
                         android:text="@string/exec_arguments" />
 
                     <LinearLayout
@@ -396,7 +380,6 @@
 
                 <TextView
                     style="@style/FieldSetLabel"
-                    android:background="?attr/colorSecondarySurface"
                     android:text="@string/system" />
             </FrameLayout>
 

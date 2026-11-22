@@ -3,20 +3,20 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="horizontal"
     android:layout_width="match_parent"
-    android:layout_height="42dp"
+    android:layout_height="46dp"
     android:gravity="center_vertical"
     android:layout_margin="1dp">
 
     <ImageButton
         android:id="@+id/BTDecrement"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
         android:background="@drawable/number_picker_background"
-        android:padding="7dp"
+        android:padding="11dp"
         android:gravity="center"
         android:scaleType="fitCenter"
         android:src="@drawable/number_picker_decrement"
-        app:tint="#ffffff" />
+        app:tint="?attr/colorPrimaryText" />
     
     <EditText
         style="@style/EditText"
@@ -33,12 +33,12 @@
 
     <ImageButton
         android:id="@+id/BTIncrement"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
         android:background="@drawable/number_picker_background"
-        android:padding="7dp"
+        android:padding="11dp"
         android:gravity="center"
         android:scaleType="fitCenter"
         android:src="@drawable/number_picker_increment"
-        app:tint="#ffffff" />
+        app:tint="?attr/colorPrimaryText" />
 </LinearLayout>

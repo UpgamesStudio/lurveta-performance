@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Lists are made of cards now: the divider only adds a little breathing room. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <size
-        android:width="1dp"
-        android:height="1dp" />
-    <solid android:color="?attr/colorSecondaryVariant" />
+    <size android:width="1dp" android:height="2dp" />
+    <solid android:color="@android:color/transparent" />
 </shape>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LURVETA icon system (tools/ui-audit/gen_icons.py). Original artwork. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path android:pathData="M4.9,6h14.2a2.4,2.4 0 0,1 2.4,2.4v7.2a2.4,2.4 0 0,1 -2.4,2.4h-14.2a2.4,2.4 0 0,1 -2.4,-2.4v-7.2a2.4,2.4 0 0,1 2.4,-2.4Z" android:strokeColor="#FF000000" android:strokeWidth="1.8" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M5.55,10a0.95,0.95 0 1,0 1.9,0a0.95,0.95 0 1,0 -1.9,0Z" android:fillColor="#FF000000" />
+    <path android:pathData="M8.55,10a0.95,0.95 0 1,0 1.9,0a0.95,0.95 0 1,0 -1.9,0Z" android:fillColor="#FF000000" />
+    <path android:pathData="M11.55,10a0.95,0.95 0 1,0 1.9,0a0.95,0.95 0 1,0 -1.9,0Z" android:fillColor="#FF000000" />
+    <path android:pathData="M14.55,10a0.95,0.95 0 1,0 1.9,0a0.95,0.95 0 1,0 -1.9,0Z" android:fillColor="#FF000000" />
+    <path android:pathData="M17.05,10a0.95,0.95 0 1,0 1.9,0a0.95,0.95 0 1,0 -1.9,0Z" android:fillColor="#FF000000" />
+    <path android:pathData="M8,14.2L16,14.2" android:strokeColor="#FF000000" android:strokeWidth="1.8" android:strokeLineCap="round" android:strokeLineJoin="round" />
+</vector>

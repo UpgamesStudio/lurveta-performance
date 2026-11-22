@@ -12,10 +12,10 @@
     <LinearLayout
         android:id="@+id/LLDisplayBox"
         android:layout_width="0dp"
-        android:layout_height="36dp"
+        android:layout_height="46dp"
         android:layout_weight="1"
-        android:paddingLeft="16dp"
-        android:paddingRight="16dp"
+        android:paddingLeft="14dp"
+        android:paddingRight="14dp"
         android:layout_marginRight="2dp"
         android:orientation="vertical"
         android:gravity="center_vertical"
@@ -42,6 +42,7 @@
     <ImageView
         style="@style/RightSideButton"
         android:id="@+id/BTSettings"
+        android:layout_height="46dp"
         android:background="@drawable/tagged_selection_box_button"
         android:src="@drawable/icon_display_settings" />
 </LinearLayout>

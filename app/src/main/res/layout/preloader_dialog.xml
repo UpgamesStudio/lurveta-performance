@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center"
+    android:background="#99000000"
     android:clickable="false"
     android:focusable="false">
 
@@ -10,26 +11,29 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:paddingTop="22dp"
-        android:paddingBottom="22dp"
-        android:paddingLeft="32dp"
-        android:paddingRight="32dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="20dp"
+        android:paddingLeft="24dp"
+        android:paddingRight="28dp"
         android:gravity="center_vertical"
         android:layout_gravity="center"
         android:background="?attr/preloaderBackground">
 
         <ProgressBar
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:indeterminate="true"
-            android:layout_marginRight="16dp"
+            android:indeterminateDuration="1400"
+            android:layout_marginRight="18dp"
             android:indeterminateDrawable="?attr/progressBarIndeterminateImage" />
 
         <TextView
             android:id="@+id/TextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="20dp"
+            android:maxWidth="320dp"
+            android:textSize="17sp"
+            android:fontFamily="sans-serif-medium"
             android:textColor="?attr/colorPrimaryText" />
     </LinearLayout>
 </FrameLayout>

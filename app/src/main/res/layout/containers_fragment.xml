@@ -8,15 +8,19 @@
         android:id="@+id/RecyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:paddingTop="10dp"
+        android:paddingBottom="88dp"
+        android:clipToPadding="false"
         android:scrollbars="vertical"
+        android:layoutAnimation="@anim/lv_list_layout"
         app:layoutManager="LinearLayoutManager" />
 
     <TextView
+        style="@style/LvEmptyState"
         android:id="@+id/TVEmptyText"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center"
+        android:drawableTop="@drawable/icon_container"
         android:text="@string/no_items_to_display"
-        android:textSize="24sp"
         android:visibility="gone" />
 </FrameLayout>
