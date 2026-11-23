@@ -138,7 +138,7 @@ public class WineDownloader {
         String defaultTitle = "Proton 10.0-4 arm64ec (" + (isModern ? "SDK 35" : "SDK 28") + ")";
 
         AlertDialog.Builder builder = new AlertDialog.Builder(activity)
-            .setTitle("Welcome to Winlator Mali")
+            .setTitle("Welcome to LURVETA Performance")
             .setMessage("No Wine or Proton runtimes are installed yet.\n\nTo run Windows games with highest performance, download the official Proton 10 runtime:")
             .setPositiveButton("Download " + defaultTitle, (dialog, which) -> {
                 sActiveWelcomeDialog = null;
@@ -226,7 +226,7 @@ public class WineDownloader {
                     InstalledWineAdapter installedAdapter = new InstalledWineAdapter(activity, installed, (verName) -> {
                         new AlertDialog.Builder(activity)
                             .setTitle("Delete " + verName + "?")
-                            .setMessage("Are you sure you want to remove this runtime from Winlator Mali?")
+                            .setMessage("Are you sure you want to remove this runtime from LURVETA Performance?")
                             .setPositiveButton("Delete", (d, w) -> {
                                 deleteWineVersion(activity, verName);
                                 AppUtils.showToast(activity, verName + " removed.");

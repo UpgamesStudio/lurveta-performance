@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LURVETA Performance identity (launcher icon background of the LURVETA redesign). -->
+<resources>
+    <color name="lurveta_icon_background">#0F141B</color>
+</resources>

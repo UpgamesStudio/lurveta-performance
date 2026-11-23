@@ -88,13 +88,16 @@ android {
     buildToolsVersion "35.0.0"
 
     defaultConfig {
-        applicationId "com.winlator.cmod"
+        // LURVETA: our identity. The code namespace stays com.winlator.cmod (upstream), the installed app is LURVETA.
+        applicationId "com.lurveta.co"
         minSdkVersion 26
         // We’re preserving Winlator’s request to keep targetSdkVersion at 28
         targetSdkVersion 28
 
-        versionCode 23
-        versionName "1.2.1 Bionic"
+        // LURVETA 2.x on the Winlator Mali base. versionCode above every LURVETA 1.x build (max 3) so it installs as an update.
+        versionCode 100
+        versionName "2.0.0-dev1"
+        resValue "string", "app_name", "LURVETA Performance"
 
         // External native build from Winlator
         externalNativeBuild {
@@ -161,26 +164,8 @@ android {
         abortOnError false
     }
 
-    flavorDimensions "version"
-    productFlavors {
-        standard {
-            dimension "version"
-            applicationId "com.winlator.mali"
-            resValue "string", "app_name", "Winlator Mali"
-        }
-        ludashi {
-            dimension "version"
-            applicationId "com.ludashi.benchmark"
-            resValue "string", "app_name", "Winlator Mali Ludashi"
-        }
-        antutu {
-            dimension "version"
-            applicationId "com.antutu.ABenchMark"
-            resValue "string", "app_name", "Winlator Mali AnTuTu"
-        }
-    }
-
-
+    // LURVETA: a single app. Winlator Mali's flavors (com.winlator.mali, com.ludashi.benchmark,
+    // com.antutu.ABenchMark) are not built: LURVETA keeps one identity and does not pose as another app.
     ndkVersion '29.0.14206865'
 
     externalNativeBuild {

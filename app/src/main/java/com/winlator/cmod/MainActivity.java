@@ -575,7 +575,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             }
 
             String creditsHTML = String.join("<br />",
-                    "<b>Winlator Mali</b> by <a href=\"https://github.com/GunaCharanTeja\">GunaCharanTeja (Fcharan)</a>",
+                    "<b>LURVETA Performance</b> by UpgamesStudio, based on <b>Winlator Mali</b> by <a href=\"https://github.com/GunaCharanTeja\">GunaCharanTeja (Fcharan)</a>",
                     "<b>Winlator &amp; Gladio</b> by <a href=\"https://github.com/brunodev85\">Bruno (brunodev85)</a>",
                     "Fork of <b>Winlator Bionic</b> by <a href=\"https://github.com/Pipetto-crypto\">Pipetto Cripto</a>",
                     "<b>BCN Layer &amp; Transcode</b> by <a href=\"https://github.com/leegao\">leegao</a>",
