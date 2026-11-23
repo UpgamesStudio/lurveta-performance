@@ -73,6 +73,8 @@ public final class CrashCollector {
                 int reason = exit.getReason();
                 if (reason == ApplicationExitInfo.REASON_USER_REQUESTED || reason == ApplicationExitInfo.REASON_EXIT_SELF
                     || reason == ApplicationExitInfo.REASON_USER_STOPPED || reason == ApplicationExitInfo.REASON_PACKAGE_UPDATED) continue;
+                // reason UNKNOWN without a description: Android recorded no cause (usually the session closed normally)
+                if (reason == ApplicationExitInfo.REASON_UNKNOWN && (exit.getDescription() == null || exit.getDescription().isEmpty())) continue;
                 sb.append("\n--- PREVIOUS APP EXIT (recorded by Android) ---\n");
                 sb.append("when: ").append(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date(exit.getTimestamp())))
                   .append(" | process ").append(exit.getProcessName()).append(" pid ").append(exit.getPid()).append('\n');

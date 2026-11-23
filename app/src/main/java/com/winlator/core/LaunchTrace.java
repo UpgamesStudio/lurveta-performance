@@ -81,6 +81,9 @@ public final class LaunchTrace {
     private final Map<Integer, Long> lastProcessTicks = new HashMap<>();
     private long lastProbeNanos = 0;
     private final List<String> probeSummary = new ArrayList<>();
+    private final Map<Integer, long[]> lastIo = new HashMap<>();
+    private final Map<Integer, java.util.Set<String>> lastOpenFiles = new HashMap<>();
+    private final Map<Integer, java.util.Set<String>> openFilesSummary = new TreeMap<>();
     private static final long CLOCK_TICKS = clockTicks();
 
     private LaunchTrace(Context context, String title, String gameExe) {
@@ -413,6 +416,7 @@ public final class LaunchTrace {
             int running = 0, sleeping = 0, disk = 0, other = 0;
             List<long[]> busiest = new ArrayList<>();          // {delta, tid}
             Map<Integer, String> names = new HashMap<>();
+            Map<String, Integer> waits = new TreeMap<>();      // what the sleeping threads wait in
             for (File task : tasks) {
                 try {
                     int tid = Integer.parseInt(task.getName());
@@ -427,6 +431,11 @@ public final class LaunchTrace {
                     long delta = previous != null ? Math.max(0, ticks - previous) : 0;
                     processDelta += delta;
                     names.put(tid, stat.substring(open + 1, close) + "/" + state);
+                    if (state == 'S' || state == 'D') {
+                        String wchan = readSmall(task.getPath() + "/wchan").trim();
+                        if (wchan.isEmpty() || wchan.equals("0")) wchan = "?";
+                        waits.merge(wchan, 1, Integer::sum);
+                    }
                     busiest.add(new long[]{delta, tid});
                 }
                 catch (Throwable ignored) {}
@@ -438,25 +447,76 @@ public final class LaunchTrace {
                 double pct = seconds > 0 ? 100.0 * t[0] / CLOCK_TICKS / seconds : 0;
                 top.append(String.format(Locale.ENGLISH, " [%s %.0f%%]", names.get((int)t[1]), pct));
             }
+            if (!busiest.isEmpty()) {
+                // "running" = spinning in user code; a number = blocked in that syscall (aarch64 numbers)
+                String sys = "";
+                try { sys = readSmall("/proc/" + pid + "/task/" + busiest.get(0)[1] + "/syscall").trim(); } catch (Throwable ignored) {}
+                top.append(" (busiest thread syscall: ").append(sys.isEmpty() ? "?" : sys.split(" ")[0]).append(")");
+            }
             long rssMb = 0;
             try {
                 String[] statm = readSmall("/proc/" + pid + "/statm").trim().split(" ");
                 rssMb = Long.parseLong(statm[1]) * 4096 / (1024 * 1024);
             }
             catch (Throwable ignored) {}
+            // File I/O progress: a loading screen that reads nothing is waiting, not loading.
+            String io = "";
+            try {
+                long rchar = -1, syscr = -1;
+                for (String l : readSmall("/proc/" + pid + "/io").split("\n")) {
+                    if (l.startsWith("rchar:")) rchar = Long.parseLong(l.substring(6).trim());
+                    else if (l.startsWith("syscr:")) syscr = Long.parseLong(l.substring(6).trim());
+                }
+                long[] prev = lastIo.put(pid, new long[]{rchar, syscr});
+                if (rchar >= 0 && prev != null && seconds > 0) {
+                    io = String.format(Locale.ENGLISH, " | read %.1f MB/s in %.0f calls/s", (rchar - prev[0]) / 1048576.0 / seconds, (syscr - prev[1]) / seconds);
+                }
+                else if (rchar >= 0) io = String.format(Locale.ENGLISH, " | read total %d MB", rchar >> 20);
+            }
+            catch (Throwable ignored) {}
+            String[] fdNames = new File("/proc/" + pid + "/fd").list();
+            int fdCount = fdNames != null ? fdNames.length : -1;
+            if (fdNames != null && isGameProcess(lastProcesses.containsKey(pid) ? lastProcesses.get(pid).toLowerCase(Locale.ROOT) : "")) {
+                java.util.TreeSet<String> files = new java.util.TreeSet<>();
+                for (String fd : fdNames) {
+                    try {
+                        String target = Os.readlink("/proc/" + pid + "/fd/" + fd);
+                        if (target.startsWith("/") && !target.startsWith("/dev/") && !target.startsWith("/proc/")) files.add(target);
+                    }
+                    catch (Throwable ignored) {}
+                }
+                java.util.Set<String> previous = lastOpenFiles.put(pid, files);
+                if (previous != null) {
+                    int changes = 0, hidden = 0;
+                    for (String f : files) if (!previous.contains(f)) { if (changes++ < 8) note("files: pid " + pid + " opened " + shortPath(f)); else hidden++; }
+                    for (String f : previous) if (!files.contains(f)) { if (changes++ < 8) note("files: pid " + pid + " closed " + shortPath(f)); else hidden++; }
+                    if (hidden > 0) note("files: pid " + pid + " " + hidden + " more files opened/closed");
+                }
+                synchronized (this) { openFilesSummary.put(pid, files); }
+            }
+            StringBuilder waitText = new StringBuilder();
+            List<Map.Entry<String, Integer>> waitList = new ArrayList<>(waits.entrySet());
+            waitList.sort((a, b) -> b.getValue() - a.getValue());
+            for (int i = 0; i < Math.min(4, waitList.size()); i++) waitText.append(i == 0 ? "" : ", ").append(waitList.get(i).getKey()).append(" x").append(waitList.get(i).getValue());
             double cpu = seconds > 0 ? 100.0 * processDelta / CLOCK_TICKS / seconds : 0;
             String name = lastProcesses.containsKey(pid) ? lastProcesses.get(pid).split(" ")[0] : String.valueOf(pid);
             boolean hasBaseline = lastProcessTicks.containsKey(pid);
             lastProcessTicks.put(pid, processDelta);
             String verdict = seconds <= 0 || !hasBaseline ? "first sample (no CPU baseline yet)" : cpu < 2 ? "IDLE/WAITING (almost no CPU: blocked or waiting for something)" : cpu > 80 * Math.max(1, running) && running <= 1 ? "one thread busy" : "working";
-            String line = String.format(Locale.ENGLISH, "probe %s pid %d: cpu %.0f%% | rss %d MB | threads %d (R%d S%d D%d other%d) | %s | busiest:%s",
-                                        name, pid, cpu, rssMb, tasks.length, running, sleeping, disk, other, verdict, top);
+            String line = String.format(Locale.ENGLISH, "probe %s pid %d: cpu %.0f%% | rss %d MB | threads %d (R%d S%d D%d other%d) | %s | busiest:%s%s | fds %d | sleeping in: %s",
+                                        name, pid, cpu, rssMb, tasks.length, running, sleeping, disk, other, verdict, top, io, fdCount, waitText.length() > 0 ? waitText : "-");
             note(line);
             synchronized (this) {
                 probeSummary.add(line);
                 if (probeSummary.size() > 6) probeSummary.remove(0);
             }
         }
+    }
+
+    private static String shortPath(String path) {
+        int i = path.indexOf("/drive_");
+        if (i < 0) i = path.indexOf("/dosdevices/");
+        return i >= 0 ? path.substring(i) : (path.length() > 160 ? "…" + path.substring(path.length() - 160) : path);
     }
 
     private static String afterMarker(String line) {
@@ -542,6 +602,11 @@ public final class LaunchTrace {
             if (!probeSummary.isEmpty()) {
                 sb.append("game process probe (latest samples):\n");
                 for (String line : probeSummary) sb.append("  ").append(line).append('\n');
+            }
+            for (Map.Entry<Integer, java.util.Set<String>> e : openFilesSummary.entrySet()) {
+                sb.append("files open in game pid ").append(e.getKey()).append(" (last sample, ").append(e.getValue().size()).append("):\n");
+                int shown = 0;
+                for (String f : e.getValue()) { if (shown++ >= 60) { sb.append("  …\n"); break; } sb.append("  ").append(shortPath(f)).append('\n'); }
             }
         }
 

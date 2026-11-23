@@ -4,6 +4,9 @@ public class Os {
     public static StructStat stat(String path) throws Exception {
         return new StructStat((Integer)java.nio.file.Files.getAttribute(java.nio.file.Paths.get(path), "unix:uid"));
     }
+    public static String readlink(String path) throws Exception {
+        return java.nio.file.Files.readSymbolicLink(java.nio.file.Paths.get(path)).toString();
+    }
     public static long sysconf(int name) {
         String key = name == OsConstants._SC_CLK_TCK ? "CLK_TCK" : "PAGESIZE";
         try {
