@@ -432,6 +432,8 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     }
 
     // ---- LURVETA: launch trace ---------------------------------------------------------------
+    private String fileLimitNote; // LURVETA: open-file limit applied to the guest (launch report)
+
     private void startLaunchTrace(String guestExecutable) {
         if (!LaunchTrace.isEnabled(preferences)) return;
 
@@ -450,6 +452,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         description.add("effective: vulkan driver " + graphicsDriver[0] + ", opengl driver " + graphicsDriver[1] + ", dxwrapper " + dxwrapper);
         description.add("dxwrapper config: " + container.getDXWrapperConfig());
         description.add("audio: " + audioDriver + " | win components: " + container.getWinComponents());
+        if (fileLimitNote != null) description.add(fileLimitNote);
         description.add("box64 preset: " + (shortcut != null ? shortcut.getExtra("box64Preset", container.getBox64Preset()) : container.getBox64Preset()));
         description.add("rootfs version: " + rootFS.getVersion() + " | rootfs dir: " + rootFS.getRootDir());
         description.add("guest executable: " + guestExecutable);
@@ -567,6 +570,21 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             envVars.putAll(container.getEnvVars());
             if (shortcut != null) envVars.putAll(shortcut.getExtra("envVars"));
             if (!envVars.has("WINEESYNC")) envVars.put("WINEESYNC", "1");
+
+            // LURVETA: esync uses one fd per Windows sync object. Raise the open-file limit (inherited by
+            // Wine/Box64); if it cannot go high enough, esync would make big games hang (GTA V stalled at
+            // 1019 open fds on its loading screen), so use wineserver synchronisation instead.
+            try {
+                long[] limits = com.winlator.core.ProcessLimits.raiseOpenFileLimit();
+                fileLimitNote = "open-file limit: soft " + limits[0] + " -> " + limits[1] + " (hard " + limits[2] + ")";
+                if (limits[1] < com.winlator.core.ProcessLimits.MIN_FILES_FOR_ESYNC && "1".equals(envVars.get("WINEESYNC"))) {
+                    envVars.put("WINEESYNC", "0");
+                    fileLimitNote += " | WINEESYNC forced to 0 (limit below " + com.winlator.core.ProcessLimits.MIN_FILES_FOR_ESYNC + ")";
+                }
+            }
+            catch (Throwable e) {
+                fileLimitNote = "open-file limit: unknown (" + e + ")";
+            }
 
             guestProgramLauncherComponent.setBox64Preset(shortcut != null ? shortcut.getExtra("box64Preset", container.getBox64Preset()) : container.getBox64Preset());
             startLaunchTrace(guestExecutable);

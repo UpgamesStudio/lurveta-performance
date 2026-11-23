@@ -82,6 +82,7 @@ public final class LaunchTrace {
     private long lastProbeNanos = 0;
     private final List<String> probeSummary = new ArrayList<>();
     private final Map<Integer, long[]> lastIo = new HashMap<>();
+    private final java.util.Set<Integer> lastIoLimitNoted = new java.util.HashSet<>();
     private final Map<Integer, java.util.Set<String>> lastOpenFiles = new HashMap<>();
     private final Map<Integer, java.util.Set<String>> openFilesSummary = new TreeMap<>();
     private static final long CLOCK_TICKS = clockTicks();
@@ -476,6 +477,15 @@ public final class LaunchTrace {
             catch (Throwable ignored) {}
             String[] fdNames = new File("/proc/" + pid + "/fd").list();
             int fdCount = fdNames != null ? fdNames.length : -1;
+            if (!lastIoLimitNoted.contains(pid)) {
+                lastIoLimitNoted.add(pid);
+                try {
+                    for (String l : readSmall("/proc/" + pid + "/limits").split("\n")) {
+                        if (l.startsWith("Max open files")) note("limits: pid " + pid + " " + l.replaceAll("\\s+", " ").trim());
+                    }
+                }
+                catch (Throwable ignored) {}
+            }
             if (fdNames != null && isGameProcess(lastProcesses.containsKey(pid) ? lastProcesses.get(pid).toLowerCase(Locale.ROOT) : "")) {
                 java.util.TreeSet<String> files = new java.util.TreeSet<>();
                 for (String fd : fdNames) {
