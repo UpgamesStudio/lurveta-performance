@@ -95,8 +95,8 @@ android {
         targetSdkVersion 28
 
         // LURVETA 2.x on the Winlator Mali base. versionCode above every LURVETA 1.x build (max 3) so it installs as an update.
-        versionCode 100
-        versionName "2.0.0-dev1"
+        versionCode 101
+        versionName "2.0.0-dev2"
         resValue "string", "app_name", "LURVETA Performance"
 
         // External native build from Winlator
