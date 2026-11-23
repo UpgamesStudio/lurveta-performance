@@ -264,7 +264,7 @@
 #define REQUEST_CODE_VK_GET_SHADER_MODULE_IDENTIFIER_EXT 352
 #define REQUEST_CODE_VK_GET_SHADER_MODULE_CREATE_INFO_IDENTIFIER_EXT 353
 
-#if DEBUG_MODE
+/* LURVETA: names are always available (used by the activity probe in vk_context.c). */
 static const char* requestCodeStrings[] = {
     "vkCreateInstance",
     "vkDestroyInstance",
@@ -526,6 +526,5 @@ static inline const char* requestCodeToString(short requestCode) {
     int index = requestCode - REQUEST_CODE_VK_CALL_START;
     return index >= 0 && index < REQUEST_CODE_VK_CALL_COUNT ? requestCodeStrings[index] : "Unknown";
 }
-#endif
 
 #endif

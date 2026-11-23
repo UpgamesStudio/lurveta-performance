@@ -7,6 +7,7 @@
 #include "request_handler.h"
 #include "vulkan_helper.h"
 #include "jni_utils.h"
+#include "crash_handler.h"
 
 
 VulkanWrapper vulkanWrapper = {0};
@@ -42,6 +43,7 @@ Java_com_winlator_xenvironment_components_VortekRendererComponent_initVulkanWrap
                                                                                     jobject obj,
                                                                                     jstring nativeLibraryDir,
                                                                                     jstring libvulkanPath) {
+    CrashHandler_install();
     void* libvulkan = openVulkanLibrary(env, nativeLibraryDir, libvulkanPath);
     initVulkanWrapper(&vulkanWrapper, libvulkan);
 }

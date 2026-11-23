@@ -7,6 +7,7 @@
 #include "async_pipeline_creator.h"
 #include "timeline_semaphore.h"
 #include "pipeline_cache.h"
+#include "fence_export.h"
 
 typedef struct VkContext {
     int clientFd;
@@ -38,13 +39,48 @@ typedef struct VkContext {
     bool performanceHints;           // LURVETA: thread priority + ADPF
     int64_t targetWorkDurationNanos; // LURVETA: ADPF target (frame budget)
 
-    TextureDecoder* textureDecoder;
+    /* LURVETA: one BC texture decoder PER DEVICE. A game may keep several VkDevices alive (GTA V does);
+     * with a single decoder the other devices created BC images the driver cannot handle and the
+     * Mali driver crashed the app in vkCmdCopyBufferToImage. Look them up with the helpers in
+     * request_handler.c, never by index. */
+#define MAX_TEXTURE_DECODERS 8
+    TextureDecoder* textureDecoders[MAX_TEXTURE_DECODERS];
+    int textureDecoderCount;
+#define MAX_TRACKED_QUEUES 32
+    struct { VkQueue queue; VkDevice device; } queueDevices[MAX_TRACKED_QUEUES];
+    int queueDeviceCount;
     ShaderInspector* shaderInspector;
     ThreadPool* threadPool;
     ThreadPool* decodeThreadPool; // LURVETA: BC decoding only (never shares workers with pipeline compiles)
     int textureUploadMode;        // LURVETA: TEXTURE_UPLOAD_MODE_* (texture_decoder.h)
     volatile bool shuttingDown;   // LURVETA: set by destroyVkContext; a normal shutdown is not an error
     int diagLines;
+    uint32_t presentCount;        // LURVETA: the first present is logged as a launch stage
+    /* LURVETA activity probe (written every 2 s to files/logs/vortek-activity.txt by a watchdog
+     * thread): tells whether the game is calling Vulkan at all and whether the server is stuck
+     * inside one call. Counters are only written by the request thread. */
+    volatile uint64_t requestCount;
+    volatile uint64_t submitCount;
+    volatile uint32_t swapchainCount;
+    volatile uint32_t imageCount;
+    volatile int currentRequest;      // -1 when waiting for the next request
+    volatile int lastRequest;
+    volatile int64_t requestStartNanos;
+    volatile int64_t requestEndNanos;
+    pthread_t activityThread;
+    FenceExport fenceExport;
+    /* LURVETA call journal: every Vulkan request of this client with the result it returned,
+     * consecutive identical (call, result) pairs merged; written to vortek-journal-<pid>.txt. */
+    struct JournalEntry* journal;
+    int journalHead;
+    int journalCount;
+    uint64_t journalVersion;
+    pthread_mutex_t journalMutex;
+    int64_t connectNanos;
+    bool firstErrorLogged;
+    char journalPath[160];          // LURVETA: real state of fences exported as SYNC_FD (see fence_export.h)
+    int clientPid;                    // LURVETA: pid of the Vulkan client process (SO_PEERCRED), 0 if unknown
+    char activityPath[160];
     bool errorReported;           // LURVETA: fatal error already logged and signalled to the client
     bool persistentPipelineCache; // LURVETA: option "pipelineCache"
     PersistentPipelineCache* pipelineCache;

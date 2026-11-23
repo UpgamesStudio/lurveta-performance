@@ -1,5 +1,25 @@
 # Prueba controlada en el teléfono: GTA IV y GTA V
 
+## Paso 0 — Captura automática de cada arranque (nuevo en 1.1.1-dev)
+Cada vez que lanzas un juego, la app escribe **`Download/LURVETA/logs/launch-latest.txt`** (se actualiza durante el arranque y al terminar; los 5 anteriores se guardan en la carpeta interna). Contiene:
+- las **etapas alcanzadas** (Box64 → Wine → explorer → proceso del juego → conexión Vulkan → instancia → dispositivo → primer fotograma) y la **última** que llegó a cumplirse;
+- el **código de salida** (o la señal, p. ej. SIGSEGV/SIGKILL) y cuánto tardó;
+- una línea de **veredicto** (heurística) y, debajo, la evidencia: línea de tiempo de procesos, variables de entorno exactas, salida de Box64 y Wine, log de DXVK y fallos Vulkan de Vortek.
+
+Si un juego termina de forma inesperada, al volver al menú verás un aviso con el veredicto. **Este archivo es lo único que necesito para empezar** (pásalo tal cual).
+
+### Para GTA IV con pantalla negra (sondas nuevas)
+Deja el juego **al menos 2 minutos** en la pantalla negra antes de cerrarlo, para que las sondas tomen varias muestras. El informe incluye:
+- `probe GTAIV.exe …` y `probe gta4Browser.exe …` cada 5 s: CPU total y de los hilos más activos (Wine les pone nombre), memoria y estados. «IDLE/WAITING» = el proceso está parado esperando algo (bloqueo); «one thread busy»/«working» = sigue ejecutando código.
+- `vortek: requests=… submits=… presents=… swapchains=… images=… allocMB=… state=…`: si el juego llama a Vulkan, cuánto, y si el servidor está **bloqueado dentro de una llamada** (`SERVER BLOCKED INSIDE THIS VULKAN CALL`) o esperando al juego.
+- Etapas Vulkan: si llegó a crear instancia, dispositivo y swapchain, y si presentó algún fotograma.
+
+Pruebas de capa, en este orden, con el mismo contenedor (cada una genera su informe):
+1. **Escritorio de Wine** (ejecutar el contenedor sin juego) y luego `notepad`/`winecfg`: si llegan a «Escritorio de Wine», Box64+Wine+rootfs funcionan.
+2. **Un juego DX9/DX11 sencillo** que sepas que funciona en Winlator 11.2: si llega a «primer fotograma», DXVK+Vortek funcionan en general.
+3. **GTA IV**, y después **GTA V**.
+El informe de cada paso dice dónde se detiene, y por tanto en qué capa está el problema. No asumas que GTA IV y GTA V fallan por lo mismo.
+
 Objetivo: **encontrar qué cambio rompe el arranque**, con evidencia, en pocos pasos. No hace falta saber programar: solo repetir y enviar los archivos indicados.
 
 ## Preparación (una vez)
@@ -29,8 +49,7 @@ Anota por fila: ¿abre ventana? ¿llega al menú? ¿carga una partida? ¿se ve b
 Mismo contenedor y ajustes del juego. Si tienes 1.0.0 o Winlator 11.2 instalados, repite la fila 5 en ellos y anota si el juego arranca ahí. Es la prueba más útil: dice si la regresión es de LURVETA o de la configuración.
 
 ## Qué enviar
-- `files/logs/vortek-diagnostics.log` y `files/logs/vortek-errors.log` (si existen) — contienen las llamadas Vulkan que fallaron y el tope de memoria.
-- El log de Wine y los `*_d3d9.log` / `*_d3d11.log` de DXVK (junto al `.exe` del juego).
+- **`Download/LURVETA/logs/launch-latest.txt`** de cada fila (ya incluye Vortek, DXVK, Wine y Box64; el log de DXVK se guarda en `C:\lurveta-logs` dentro del contenedor).
 - La tabla de arriba rellenada y el modelo exacto/versión de Android.
 - Si grabas con el benchmark: la carpeta de `Download/LURVETA/benchmarks/`.
 

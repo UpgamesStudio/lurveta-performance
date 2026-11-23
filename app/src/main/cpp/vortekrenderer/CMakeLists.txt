@@ -5,6 +5,11 @@ project(VortekRenderer)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -Wno-unused-function -Wimplicit-function-declaration -DVK_USE_PLATFORM_ANDROID_KHR")
 
 include_directories(include)
+
+# LURVETA: commit of the source tree this library was built from (printed in every launch report).
+if (DEFINED LURVETA_BUILD_ID)
+    add_definitions(-DLURVETA_BUILD_ID="${LURVETA_BUILD_ID}")
+endif()
 include_directories(../winlator/include)
 
 add_library(vortekrenderer SHARED
@@ -19,6 +24,8 @@ add_library(vortekrenderer SHARED
             src/shader_inspector.c
             src/async_pipeline_creator.c
             src/pipeline_cache.c
+            src/fence_export.c
+            src/crash_handler.c
             src/timeline_semaphore.c)
 
 target_link_libraries(vortekrenderer

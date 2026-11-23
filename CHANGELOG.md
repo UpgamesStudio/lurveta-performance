@@ -13,6 +13,38 @@ Objetivo: aislar y corregir la regresión de arranque de GTA IV/GTA V. **No se d
 - El cierre normal de una sesión ya no registra un «FATAL» falso en `vortek-errors.log` (y el benchmark deja de contarlo como fallo). **[V‑código]**
 - `vkGetPhysicalDeviceImageFormatProperties` para BC vuelve a no ser más estricto que 1.0.0: responde el driver con el formato descomprimido. **[V‑código]**
 
+### Captura de arranque (nuevo)
+- Cada lanzamiento genera `Download/LURVETA/logs/launch-latest.txt`: etapas alcanzadas (Box64, Wine, explorer, proceso del juego, conexión/instancia/dispositivo Vulkan, primer fotograma), **código de salida o señal**, tiempo, veredicto y evidencia (procesos, entorno exacto, salida de Box64/Wine, log de DXVK, fallos Vulkan). Antes la salida iba a `/dev/null`, los errores de `exec` se ignoraban y la app volvía al menú sin avisar (comportamiento heredado de 11.2).
+- Si el arranque termina de forma inesperada, el menú lo avisa con el veredicto.
+- Solo cambia lo que se **imprime**: `DXVK_LOG_LEVEL=info` (si estaba en `none`), `WINEDEBUG=fixme-all` (si estaba en `-all`, conserva los `err:`) y `BOX64_LOG=1`; nunca sobrescribe valores puestos por el usuario. Se puede desactivar con la preferencia `lurveta_launch_trace`.
+- **[V‑host]** la lógica del veredicto (cada punto de parada → diagnóstico correcto). **No probado en dispositivo** la captura en sí.
+- `docs/DIFERENCIAS_CON_WINLATOR_11_2.md`: comparación del camino de arranque con 11.2 (verificado: rutas reubicadas sin restos).
+
+### Diagnóstico de GTA V tras la corrección de fences
+- Diario de llamadas Vulkan por cliente con el resultado real de cada respuesta (`vortek-journal-<pid>.txt`, en el informe); el primer error real se registra como `FIRST ERROR` (sin contar consultas de capacidades).
+- El informe extrae todas las líneas de error de la salida completa de Box64/Wine y filtra el ruido repetitivo (`… not found in lib`, PolygonOffset), que ocultaba la cola.
+- El informe indica qué procesos del juego seguían vivos al terminar la sesión de Wine (el código de salida es del escritorio, no del juego).
+- Identificador de compilación (commit, `-dirty` si hay cambios sin commit, hora UTC) en BuildConfig, en la biblioteca nativa y en cada informe.
+- **[V‑host]** informe con ruido simulado (3500 líneas) y un fallo real dentro; diario incluido; juego vivo al cierre detectado. El diario nativo solo está compilado.
+
+### Corrección: falso `VK_ERROR_DEVICE_LOST` al esperar fences (GTA V)
+- Causa: exportar un fence como SYNC_FD lo resetea (especificación de Vulkan). La siguiente espera o consulta del mismo fence fallaba, y el cliente de Vortek convierte cualquier fallo en `VK_ERROR_DEVICE_LOST`. GTA V lo registraba tras 2 envíos a la GPU, sin pérdida real del dispositivo.
+- Ahora: cada fence se exporta como mucho una vez y su sync fd se conserva como estado real; los fences ya señalados no se exportan; nunca se envían descriptores inválidos (antes, un `-1` hacía fallar `sendmsg` y el cliente quedaba colgado); los fallos restantes se registran.
+- **[V‑host]** driver simulado según la especificación: el algoritmo original reproduce el `DEVICE_LOST`, el nuevo no; el kernel rechaza `-1` en `SCM_RIGHTS`. **Pendiente de validar en el Dimensity 8350 con GTA V.**
+
+### Captura: correcciones tras el primer informe real (GTA IV en el Dimensity 8350)
+- Cada cliente Vulkan escribe su propio archivo de actividad (`vortek-activity-<pid>.txt`); antes compartían uno y el informe mezclaba el escritorio de Wine con el juego.
+- FPS estimados por cliente a partir de las presentaciones (último tramo y mejor tramo).
+- Juegos lanzados desde el escritorio: se detecta cualquier `.exe` que no sea de Wine y se muestrean sus hilos.
+- Cada lanzamiento deja además `Download/LURVETA/logs/launch-<fecha>.txt`, que no se sobrescribe; el informe indica el proceso de juego detectado.
+- **[V‑host]** ejecutado en Linux: dos clientes, FPS estimados, juego lanzado desde el escritorio.
+
+### Sondas para pantallas negras (nuevo)
+- Vortek escribe cada 2 s `files/logs/vortek-activity.txt` (desde un hilo vigía): peticiones, envíos, presentaciones, swapchains, imágenes, memoria y **la llamada Vulkan en curso y desde hace cuánto**; el informe marca `SERVER BLOCKED INSIDE THIS VULKAN CALL` si dura más de 5 s.
+- El informe muestrea cada 5 s los hilos del proceso del juego y de sus procesos auxiliares (p. ej. `gta4Browser.exe`): CPU por hilo, estados y memoria, para distinguir bloqueo de ejecución.
+- Se registran los fallos de `vkCreateSwapchainKHR` (Vortek rechaza un swapchain cuyo tamaño no coincide exactamente con la ventana).
+- **[V‑host]** captura completa ejecutada en Linux contra un GTA IV simulado (proceso ocupado, auxiliar dormido, llamada Vulkan bloqueada). **No probada en dispositivo.**
+
 ### Diagnóstico (nuevo)
 - `files/logs/vortek-diagnostics.log`: resumen del dispositivo al arrancar y una línea por cada llamada Vulkan que falla (memoria con tamaños y tope, imágenes, buffers, vistas, pipelines…). Límite de 200 líneas por sesión; sin coste si todo va bien. El benchmark cuenta estos fallos (`vulkan_call_failures`, `events.csv`).
 - Interruptor Vortek › **Emular BC6H/BC7** (por defecto activado): desactivado reproduce el comportamiento de 1.0.0. Junto con el modo de subida BC y la caché de pipelines, permite aislar la regresión sin cambiar de APK (`docs/PRUEBAS_GTA.md`).

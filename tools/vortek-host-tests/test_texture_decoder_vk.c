@@ -603,7 +603,24 @@ int main(int argc, char** argv) {
                (unsigned long long)results[mode].extraSubmits, (unsigned long long)results[mode].cpuWaits, (unsigned long long)results[mode].wawBarriers);
     }
 
+    /* GTA V keeps several VkDevices alive: the decoder of a FIRST device stays alive while a second
+     * device creates, uploads and samples its own BC textures through its own decoder. */
+    printf("\n== two devices alive (one decoder per device) ==");
+    VkContext firstContext = {0};
+    firstContext.graphicsQueueIndex = env.queueFamily;
+    firstContext.decodeThreadPool = ThreadPool_init(2);
+    firstContext.textureUploadMode = TEXTURE_UPLOAD_MODE_INLINE;
+    VkPhysicalDeviceFeatures noBC = {0};
+    TextureDecoder* firstDecoder = TextureDecoder_create(&firstContext, env.physicalDevice, env.device, &noBC);
+    Env second = {0};
+    createEnv(&second, validation);
+    ModeResult twoDevices = runMode(&second, TEXTURE_UPLOAD_MODE_INLINE);
+    TextureDecoder_destroy(firstDecoder);
+    destroyEnv(&second);
+    printf("two devices: failures %d, validation errors %d\n", twoDevices.failures, twoDevices.validationErrors);
+
     destroyEnv(&env);
     /* The default (inline) mode must be fully correct and clean; legacy modes are reported, not gated. */
-    return !switchFailures && results[TEXTURE_UPLOAD_MODE_INLINE].failures == 0 && results[TEXTURE_UPLOAD_MODE_INLINE].validationErrors == 0 ? 0 : 1;
+    return !switchFailures && results[TEXTURE_UPLOAD_MODE_INLINE].failures == 0 && results[TEXTURE_UPLOAD_MODE_INLINE].validationErrors == 0
+           && firstDecoder && twoDevices.failures == 0 && twoDevices.validationErrors == 0 ? 0 : 1;
 }
